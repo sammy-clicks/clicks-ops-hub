@@ -1,0 +1,1784 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Clicks Ops Hub — Field Guide</title>
+  <style>
+    :root { --bg:#0b0f14; --card:#121826; --text:#e6edf3; --muted:#9aa4b2; --line:#223047; --ok:#22c55e; --bad:#ef4444; --warn:#f59e0b; --btn:#1f6feb; }
+    * { box-sizing: border-box; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; }
+
+    .pill { display:inline-flex; align-items:center; gap:8px; padding: 8px 10px; border:1px solid var(--line); border-radius: 999px; color: var(--muted); font-size: 12px; }
+    .stepbar { display:flex; gap: 8px; align-items:center; flex-wrap: wrap; }
+    .dot { width: 10px; height: 10px; border-radius: 999px; background: #2b3a55; border:1px solid var(--line); }
+    .dot.on { background: var(--btn); }
+    .field { display:flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+    label { font-size: 12px; color: var(--muted); }
+    input, select, textarea {
+      width: 100%;
+      background: #0f1522;
+      border: 1px solid var(--line);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 12px;
+      outline: none;
+    }
+    textarea { min-height: 92px; resize: vertical; }
+    .script {
+      border: 1px solid var(--line);
+      background: #0f1522;
+      padding: 12px;
+      border-radius: 14px;
+      white-space: pre-wrap;
+      line-height: 1.35;
+      font-size: 13px;
+    }
+    /* Summary styling for a cleaner, card-like look */
+    .summary { display: block; padding: 8px; border-radius: 12px; background: rgba(255,255,255,0.02); }
+    .summary-header { font-weight: 800; color: var(--text); margin-bottom: 10px; font-size: 15px; }
+    .summary-section { margin-top: 6px; border-radius: 8px; padding: 6px 0; }
+    .summary-row { display: grid; grid-template-columns: 160px 1fr; gap: 12px; padding: 8px 10px; border-radius: 8px; align-items: center; }
+    .summary-row + .summary-row { margin-top: 6px; }
+    .summary-label { color: var(--muted); font-size: 13px; }
+    .summary-value { color: var(--text); font-weight: 700; padding: 6px 8px; border-radius: 6px; text-align: left; word-break: break-word; max-width: 48ch; }
+    .summary-value.light { font-weight: 600; color: var(--muted); background: transparent; }
+    @media (max-width: 640px){
+      .summary-row { grid-template-columns: 1fr; }
+      .summary-value { text-align: left; }
+    }
+    /* Collapsible details for form data */
+    .details { margin-top: 10px; border-top: 1px dashed rgba(255,255,255,0.04); padding-top: 8px; }
+    .details .details-body { margin-top: 8px; }
+    .details.collapsed .details-body { display: none; }
+    .toggle-small { font-size: 13px; color: var(--btn); background: transparent; border: 0; cursor: pointer; padding: 6px 8px; }
+    .mini { font-size: 12px; color: var(--muted); margin-top: 8px; }
+    .status { margin-top: 10px; padding: 10px 12px; border-radius: 12px; border:1px solid var(--line); background: #0f1522; font-size: 13px; color: var(--muted); }
+    .status.good { border-color: rgba(34,197,94,.45); color: rgba(34,197,94,.95); }
+    .status.bad { border-color: rgba(239,68,68,.45); color: rgba(239,68,68,.95); }
+    .status.warn { border-color: rgba(245,158,11,.45); color: rgba(245,158,11,.95); }
+    .sticky { position: sticky; top: 0; background: linear-gradient(to bottom, rgba(11,15,20,.92), rgba(11,15,20,.75)); backdrop-filter: blur(10px); padding: 12px 0 10px; z-index: 10; }
+    .footer { margin-top: 12px; display:flex; gap: 10px; flex-wrap: wrap; justify-content: space-between; }
+    .footer .left { display:flex; gap: 10px; flex-wrap: wrap; }
+    .kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size: 12px; }
+    .hide { display:none; }
+    /* Make the start panel act as a standalone modal that ignores page layout */
+    .start-panel { position: fixed; z-index: 60; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(520px, 92%); max-width: 92%; box-shadow: 0 20px 60px rgba(0,0,0,.6); border-radius: 12px; }
+    .start-panel.hide { display: none; }
+    /* Optional backdrop effect by dimming the page behind the modal when visible */
+    .start-panel::before { content: ""; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: -1; border-radius: 12px; }
+    /* Start panel: vertical buttons, styled new / continue */
+    .start-panel .btns { display:flex; flex-direction: column; gap: 10px; align-items: center; }
+    .start-panel .start-new { background: linear-gradient(180deg, rgba(31,111,235,0.08), rgba(31,111,235,0.04)); color: var(--btn); border: 1px solid rgba(31,111,235,0.18); padding: 8px 14px; border-radius: 10px; font-weight: 700; width: auto; }
+    .start-panel .start-new.danger { background: var(--bad); color: #fff; border-color: rgba(239,68,68,0.5); }
+    .start-panel .start-continue { background: transparent; border: 0; color: var(--muted); text-decoration: underline; padding: 6px 0; align-self: center; }
+    #startNote { margin-top: 8px; border: 1px solid var(--line); padding: 8px 10px; border-radius: 10px; background: #07101a; color: var(--muted); }
+    /* Slightly larger pill title inside main screen */
+    .card#screen .pill { font-size: 15px; font-weight: 800; color: var(--text); padding: 8px 12px; margin-bottom: 8px; }
+    /* Layout screen as column so buttons can be pinned to the bottom for consistent placement */
+    .card#screen { display:flex; flex-direction: column; min-height: 480px; }
+    /* Allow the inner body to scroll if a screen has more content than the fixed area */
+    #screenBody { display:flex; flex-direction: column; flex: 1 1 auto; overflow-y: auto; padding-bottom: 8px; }
+    /* Ensure action buttons (Atrás / Continuar) sit in the same place for all wizard screens */
+    .card#screen .btns { display:flex; gap: 10px; justify-content: flex-end; align-items: center; flex-wrap: wrap; margin-top: auto; }
+  </style>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="nav">
+    <div class="inner">
+      <div class="brand"><span class="dot"></span><span>Clicks Ops Hub</span></div>
+      <div class="links">
+        <a class="btn primary" href="index.html">Home</a>
+        <a class="btn coral active" href="field-guide.html">Visitas</a>
+        <a class="btn yellow" href="post-visit.html">Post‑Visita</a>
+        <a class="btn neon" href="venue-board.html">Venues</a>
+        <a class="btn cyan" href="excel-automator.html">Finanzas</a>
+        <a class="btn muted" href="files-vault.html">Archivos</a>
+      </div>
+      <!-- right controls removed (clock / Guion / Reset) to keep header layout consistent -->
+    </div>
+  </div>
+
+  <div id="loginScreen" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; align-items:center; justify-content:center;">
+    <div style="background:#fff; padding:40px; border-radius:10px; box-shadow:0 0 20px rgba(0,0,0,0.5); max-width:400px; width:90%;">
+      <h2 style="text-align:center; margin-bottom:20px; color:#333;">Clicks Ops Hub - Login</h2>
+      <form id="loginForm">
+        <div style="margin-bottom:15px;">
+          <label for="username" style="display:block; margin-bottom:5px; color:#555;">Usuario:</label>
+          <input type="text" id="username" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:5px; font-size:16px;" required>
+        </div>
+        <div style="margin-bottom:20px;">
+          <label for="password" style="display:block; margin-bottom:5px; color:#555;">Contraseña:</label>
+          <input type="password" id="password" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:5px; font-size:16px;" required>
+        </div>
+        <button type="submit" style="width:100%; padding:12px; background:#007bff; color:#fff; border:none; border-radius:5px; font-size:16px; cursor:pointer;">Iniciar Sesión</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="sticky">
+      <div class="stepbar" id="stepbar"></div>
+    </div>
+
+    <div class="card hide" id="screen">
+      <div class="title">Formularios de visita</div>
+      <div id="screenBody"></div>
+    </div>
+
+    <div class="card start-panel hide" id="startPanel" aria-hidden="true">
+      <div class="title">¿Qué deseas hacer?</div>
+      <div class="hr"></div>
+      <div id="startNote" class="mini hide">Si inicias un nuevo formulario perderás el anterior si no lo enviaste.</div>
+      <div class="btns">
+        <button class="btn coral start-new" id="btnStartNew" type="button">Nuevo formulario</button>
+        <button class="btn ghost start-continue" id="btnStartContinue" type="button">Continuar formulario anterior</button>
+      </div>
+    </div>
+
+    <div class="card hide" id="guidePanel" aria-hidden="true">
+      <div class="title">Guion rápido — Visita (≤2 minutos)</div>
+      <div class="muted">Lleva esto literal. Frases cortas; habla con calma.</div>
+      <div class="hr"></div>
+
+      <div class="script guide-printable" id="guideContent">
+
+Saludo:
+Buenas, ¿quién está a cargo ahora mismo?
+
+Apertura (10s):
+No vengo a venderte nada ni a cobrarte.
+Estamos haciendo una prueba para ver qué locales tienen gente en la noche.
+
+Qué es Clicks (15s):
+Clicks es una página donde la gente ve qué sitios están prendidos ahora mismo.
+
+Qué hacemos ahora:
+Ahora mismo solo estamos anotando locales y viendo cómo se mueve la gente.
+
+Por qué este local:
+Queremos incluir este local para que salga cuando haya ambiente.
+Eso le da visibilidad gratis a la gente que está decidiendo a dónde ir.
+
+Permiso (sin drama):
+No hay contrato de pago.
+No hay pagos.
+No hay compromiso.
+Puedes cancelar cuando quieras.
+
+Cierre:
+¿Te parece bien que lo incluyamos?
+También te haríamos unas preguntas sencillas sobre el local para tener la información correcta.
+
+Si dicen que sí:
+Perfecto, solo necesito el nombre del local y un contacto.
+
+Si dicen que no:
+Todo bien, gracias por el tiempo.
+
+FRASE SALVAVIDAS:
+Es solo para que la gente vea dónde hay ambiente ahora.
+
+      
+      </div>
+
+      <div class="hr"></div>
+      <div class="btns">
+        <button class="btn" id="btnPrintGuide" type="button">Imprimir Guion</button>
+        <button class="btn ghost" id="btnCloseGuide" type="button">Cerrar</button>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div>
+        <span class="pill">Clicks LLC · Ops Hub interno</span>
+      </div>
+    </div>
+  </div>
+
+<script>
+function login() {
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+if(localStorage.getItem('loggedIn') !== 'true') {
+  login();
+}
+/** =========================
+ *  CONFIG
+ *  ========================= */
+const CONFIG = {
+  // Pega aquí tu Web App URL (Apps Script doPost)
+  ENDPOINT: "PEGA_AQUI_TU_WEB_APP_URL",
+
+  // Token simple para que nadie te spamee el endpoint.
+  // (Pon el mismo token en tu Apps Script y valida.)
+  TOKEN: "CAMBIA_ESTE_TOKEN",
+
+  // Si quieres abrir tu Google Form oficial desde el wizard
+  GOOGLE_FORM_URL: "https://forms.gle/p17xKPHmRUNfCztd7",
+
+  // Correo que recibirá la notificación automática (se envía en el payload)
+  NOTIFY_EMAIL: "nightclickspr@gmail.com",
+};
+
+const PITCH_TEXT =
+`No vengo a venderte nada ni a cobrarte.
+Estamos haciendo una prueba para ver qué locales tienen gente en la noche.
+Clicks es una página donde la gente ve qué sitios están prendidos ahora mismo.`;
+/** =========================
+ *  STATE
+ *  ========================= */
+const STORAGE_KEY = "clicks_wizard_v1";
+const state = loadState() || {
+  meta: {
+    started_at: new Date().toISOString(),
+    empleado: "",
+    tipo_contacto: "calle", // calle | telefono
+  },
+  precheck: { app_ok: false, internet_ok: false, pitch_ready: false },
+  autoridad: { esta: null, nombre: "", cargo: "", tel: "" },
+  pitch: { dicho: false },
+  resultado: {
+    tipo: "", // autorizo | no_autoriza | seguimiento
+    seguimiento_fecha: "",
+  },
+  consentimiento: { ok: null, opened: false },
+  form: { enviado: null },
+  interes: "medio", // alto | medio | bajo
+  // Datos del local (nombre, dirección, zona)
+  local: { nombre: "", direccion: "", zona: "", zona_custom: "" },
+  notas: "",
+  submit: { last_status: "", last_ok: null }
+};
+
+const steps = [
+  { key: "setup",        label: "Setup" },
+  { key: "precheck",     label: "Pre-Check" },
+  { key: "autoridad",    label: "Encargado" },
+  { key: "pitch",        label: "Pitch" },
+  { key: "resultado",    label: "Resultado" },
+  { key: "submit",       label: "Enviar" },
+];
+
+let currentStepIndex = 0;
+
+/** =========================
+ *  UI HELPERS
+ *  ========================= */
+const $ = (sel) => document.querySelector(sel);
+function escapeHtml(s=""){ return s.replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function saveState(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+function loadState(){ try { return JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch(e){ return null; } }
+function resetState(){
+  localStorage.removeItem(STORAGE_KEY);
+  location.reload();
+}
+function nowClock(){
+  const d = new Date();
+  return d.toLocaleString("es-PR", { weekday:"short", day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit" });
+}
+function formatYMD(d){
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const day = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${day}`;
+}
+function setClock(){
+  const el = document.getElementById('clock');
+  if (el) el.textContent = nowClock();
+}
+setInterval(setClock, 1000);
+setClock();
+
+function renderStepBar(){
+  const bar = $("#stepbar");
+  bar.innerHTML = "";
+  steps.forEach((s, i) => {
+    const dot = document.createElement("div");
+    dot.className = "dot" + (i === currentStepIndex ? " on" : "");
+    dot.title = s.label;
+    bar.appendChild(dot);
+  });
+}
+
+function goToStep(idx){
+  currentStepIndex = Math.max(0, Math.min(steps.length - 1, idx));
+  render();
+}
+function next(){ goToStep(currentStepIndex + 1); }
+function back(){ goToStep(currentStepIndex - 1); }
+
+function statusBox(kind, text){
+  return `<div class="status ${kind}">${escapeHtml(text)}</div>`;
+}
+
+function guardStopIfPrecheckFail(){
+  // Backwards-compatible boolean used by flow decisions
+  return getPrecheckMissing().length === 0;
+}
+
+// Return an array of missing precheck items (human-friendly labels)
+function getPrecheckMissing(){
+  const missing = [];
+  if (!state.local || !(state.local.nombre || '').toString().trim()) missing.push('Nombre del negocio');
+  if (!state.local || !(state.local.zona || '').toString().trim()) missing.push('Zona');
+  const okChecks = state.precheck.app_ok && state.precheck.internet_ok && state.precheck.pitch_ready;
+  if (!okChecks) missing.push('Marcar los 3 checkboxes en la parte de arriba');
+  return missing;
+}
+
+function updatePrecheckStatus(){
+  const el = document.getElementById('precheckStatus');
+  const btn = document.getElementById('btnNext');
+  if (!el && !btn) return;
+  const missing = getPrecheckMissing();
+  if (el) el.innerHTML = missing.length === 0 ? statusBox('good','OK. Puedes seguir.') : statusBox('warn', `Campos restantes: ${missing.join(', ')}`);
+  if (btn) {
+    if (missing.length === 0) btn.removeAttribute('disabled'); else btn.setAttribute('disabled','');
+  }
+}
+
+/** =========================
+ *  SCREEN RENDERERS
+ *  ========================= */
+function screenSetup(){
+  const empleadoVal = state.meta.empleado || "";
+  const presets = ["Luis","Samuel","Gabriela","Luna","Andrea"];
+  const isOther = (empleadoVal && !presets.includes(empleadoVal));
+  return `
+    <div class="title">Setup</div>
+    <div class="muted">Identifica al empleado y el tipo de contacto. Se guarda en draft automático.</div>
+    <div class="hr"></div>
+
+    <div class="row">
+      <div class="col">
+        <div class="field">
+          <label>Empleado (nombre)</label>
+          <select id="empleado_select">
+            <option value="" ${empleadoVal==="" ? "selected" : ""}>Selecciona…</option>
+            <option value="Luis" ${empleadoVal==="Luis" ? "selected" : ""}>Luis</option>
+            <option value="Samuel" ${empleadoVal==="Samuel" ? "selected" : ""}>Samuel</option>
+            <option value="Gabriela" ${empleadoVal==="Gabriela" ? "selected" : ""}>Gabriela</option>
+            <option value="Luna" ${empleadoVal==="Luna" ? "selected" : ""}>Luna</option>
+            <option value="Andrea" ${empleadoVal==="Andrea" ? "selected" : ""}>Andrea</option>
+            <option value="other" ${isOther ? "selected" : ""}>Otro</option>
+          </select>
+          <div id="empleado_other_wrap" style="${isOther ? "" : "display:none;"}">
+            <input id="empleado_other" value="${isOther ? escapeHtml(empleadoVal) : ""}" placeholder="Escribe el nombre..." />
+          </div>
+        </div>
+      </div>
+      <div class="col">
+        <div class="field">
+          <label>Tipo de contacto</label>
+          <select id="tipo_contacto">
+                <option value="calle" ${state.meta.tipo_contacto==="calle" ? "selected" : ""}>Presencial</option>
+                <option value="telefono" ${state.meta.tipo_contacto==="telefono" ? "selected" : ""}>Por teléfono</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="btns">
+      <button class="btn" id="btnNext">Continuar</button>
+    </div>
+  `;
+}
+
+function screenPrecheck(){
+  const missing = getPrecheckMissing();
+  const ok = missing.length === 0;
+  const missingMsg = missing.length ? `Campos restantes: ${missing.join(', ')}` : '';
+  return `
+    <div class="title">Pre-Check (antes de hablar)</div>
+    <div class="muted">Si algo falla, no sigas. Arregla primero.</div>
+    <div class="hr"></div>
+
+    <div class="row">
+      <div class="col">
+        <div class="field">
+          <label>Nombre del negocio</label>
+          <input id="local_nombre" value="${escapeHtml(state.local.nombre || "")}" placeholder="Nombre del local (lo sabes antes)" />
+        </div>
+      </div>
+      <div class="col">
+        <div class="field">
+          <label>Zona</label>
+          <select id="local_zona_select">
+            ${(() => {
+              const z = (state.local.zona || '').toString();
+              const presets = ['Viejo San Juan','La Placita','Condado','Calle Cerra','Calle Loiza','Isla Verde'];
+              const isOther = z && !presets.includes(z);
+              let html = '';
+              html += `<option value="">Selecciona…</option>`;
+              presets.forEach(p=>{ html += `<option value="${escapeHtml(p)}" ${z===p? 'selected':''}>${escapeHtml(p)}</option>`; });
+              html += `<option value="other" ${isOther? 'selected':''}>Otros</option>`;
+              return html;
+            })()}
+          </select>
+          <div id="local_zona_custom_wrap" style="${(state.local.zona && ['Viejo San Juan','La Placita','Condado','Calle Cerra','Calle Loiza','Isla Verde'].includes(state.local.zona)) ? 'display:none;' : ''}">
+            <input id="local_zona_custom" value="${escapeHtml((state.local.zona && !['Viejo San Juan','La Placita','Condado','Calle Cerra','Calle Loiza','Isla Verde'].includes(state.local.zona)) ? state.local.zona : '')}" placeholder="Especifica zona…" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <div class="field">
+      <label><input type="checkbox" id="app_ok" ${state.precheck.app_ok ? "checked":""}/> App abre / login OK</label>
+    </div>
+    <div class="field">
+      <label><input type="checkbox" id="internet_ok" ${state.precheck.internet_ok ? "checked":""}/> Internet estable (data/wifi)</label>
+    </div>
+    <div class="field">
+      <label><input type="checkbox" id="pitch_ready" ${state.precheck.pitch_ready ? "checked":""}/> Mensaje listo (sin improvisar)</label>
+    </div>
+
+    <div id="precheckStatus">${ok ? statusBox("good","OK. Puedes seguir.") : statusBox("warn", missingMsg)}</div>
+
+    <div class="btns">
+      <button class="btn ghost" id="btnBack">Atrás</button>
+      <button class="btn" id="btnNext" ${ok ? "" : "disabled"}>Continuar</button>
+    </div>
+  `;
+}
+
+function screenAutoridad(){
+  return `
+    <div class="title">Encargado</div>
+    <div class="muted">Primero: identifica si estás hablando con la persona a cargo.</div>
+    <div class="hr"></div>
+
+    <div class="script">Script:
+"Hola, ¿quién está a cargo ahora mismo? Estoy haciendo una colaboración rápida con Clicks."</div>
+
+    <div class="hr"></div>
+
+    <div class="field">
+      <label>¿Está el encargado disponible?</label>
+      <select id="autoridad_esta">
+        <option value="" ${state.autoridad.esta===null ? "selected":""}>Selecciona…</option>
+        <option value="si" ${state.autoridad.esta===true ? "selected":""}>Sí</option>
+        <option value="no" ${state.autoridad.esta===false ? "selected":""}>No</option>
+      </select>
+    </div>
+
+
+    <div class="btns">
+      <button class="btn ghost" id="btnBack">Atrás</button>
+      <button class="btn" id="btnNext">Continuar</button>
+    </div>
+
+    <div class="mini">Regla: si NO está el encargado, el objetivo es sacar contacto y cerrar limpio. El wizard te va a empujar a Post-Visita.</div>
+  `;
+}
+
+function screenPitch(){
+  const blocked = (state.autoridad.esta === false); // si no está el encargado, no tiene sentido hacer pitch completo
+  const ok = state.pitch.dicho === true && !blocked;
+
+  return `
+    <div class="title">Mensaje (texto fijo)</div>
+    <div class="muted">${blocked ? "No está el encargado. No pierdas tiempo: ve a Post-Visita y seguimiento." : "Di el mensaje completo, sin añadir cosas."}</div>
+    <div class="hr"></div>
+
+    <div class="script">${escapeHtml(PITCH_TEXT)}</div>
+
+    <div class="hr"></div>
+
+    <div class="field">
+      <label><input type="checkbox" id="pitch_dicho" ${state.pitch.dicho ? "checked":""} ${blocked ? "disabled":""}/> Mensaje dicho completo</label>
+    </div>
+
+    ${blocked ? statusBox("warn","Skipping pitch: no está el encargado. Cierra con contacto y seguimiento.") : (ok ? statusBox("good","OK. Sigue.") : statusBox("warn","Marca el pitch como dicho antes de seguir."))}
+
+    <div class="btns">
+      <button class="btn ghost" id="btnBack">Atrás</button>
+      <button class="btn" id="btnNext" ${blocked || ok ? "" : "disabled"}>Continuar</button>
+    </div>
+  `;
+}
+
+function screenResultado(){
+  const noAutoridad = (state.autoridad.esta === false);
+  const disabled = "";
+  const mustForce = noAutoridad ? "no_autoriza" : state.resultado.tipo;
+  let minDateStr = "";
+  let maxDateStr = "";
+  try{
+    const started = new Date(state.meta.started_at || new Date().toISOString());
+    const minD = new Date(started.getTime() + 24 * 3600 * 1000);
+    const maxD = new Date(started.getTime() + 72 * 3600 * 1000);
+    minDateStr = formatYMD(minD);
+    maxDateStr = formatYMD(maxD);
+  } catch(e){}
+
+  const currentVal = state.resultado.seguimiento_fecha || minDateStr;
+
+  return `
+    <div class="title">Resultado válido</div>
+    <div class="muted">Elige el resultado real.</div>
+    <div class="hr"></div>
+
+    <div class="row">
+      <div class="col">
+        <div class="field">
+          <label>Resultado</label>
+          <select id="resultado_tipo" ${disabled}>
+            <option value="" ${mustForce==="" ? "selected":""}>Selecciona…</option>
+            <option value="autorizo" ${mustForce==="autorizo" ? "selected":""}>Autorizó a crear el perfil</option>
+            <option value="no_autoriza" ${mustForce==="no_autoriza" ? "selected":""}>No autorizó a crear el perfil</option>
+            <option value="seguimiento" ${mustForce==="seguimiento" ? "selected":""}>Pidió seguimiento</option>
+          </select>
+        </div>
+      </div>
+      <div class="col">
+        <div class="field ${mustForce==="seguimiento" ? "" : "hide"}">
+          <label>Fecha seguimiento (si aplica)</label>
+          <input id="seguimiento_fecha" type="date" value="${escapeHtml(currentVal)}" min="${escapeHtml(minDateStr)}" max="${escapeHtml(maxDateStr)}" />
+          <div class="mini">La fecha debe ser entre 24 y 72 horas después del contacto.</div>
+        </div>
+      </div>
+    </div>
+
+    ${state.consentimiento.opened ? `
+      <div id="questionnaire" class="script">
+        <div class="btns" style="margin-bottom:8px;">
+          <button class="btn ghost" id="btnQuestionnaireBack">Volver</button>
+        </div>
+        <div class="title">Form - Registro de Bar, Perfil Operativo, Precios y Sistema</div>
+        <div class="hr"></div>
+        <form id="barForm">
+          <div class="section">
+            <h4>Parte 1: Registro del Bar</h4>
+            <div class="field">
+              <label>Nombre del negocio</label>
+              <input type="text" id="business_name" name="business_name" required value="${escapeHtml(state.local.nombre || "")}" readonly />
+              <span class="error" id="err_business_name"></span>
+            </div>
+            <div class="field">
+              <label>Zona</label>
+              <input type="text" id="business_zone" name="business_zone" required value="${escapeHtml(state.local.zona === 'other' ? (state.local.zona_custom || '') : (state.local.zona || ''))}" readonly />
+              <span class="error" id="err_business_zone"></span>
+            </div>
+            <div class="field">
+              <label>Nombre del encargado</label>
+              <input type="text" id="manager_name" name="manager_name" required />
+              <span class="error" id="err_manager_name"></span>
+            </div>
+            <div class="field">
+              <label>Tipo de negocio</label>
+              <select id="business_type" name="business_type" required>
+                <option value="">Selecciona…</option>
+                <option value="Barra">Barra</option>
+                <option value="Club">Club</option>
+                <option value="Rooftop">Rooftop</option>
+                <option value="Lounge">Lounge</option>
+                <option value="Speakeasy">Speakeasy</option>
+                <option value="Restaurante">Restaurante</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="field hide" id="business_type_other_wrap">
+              <label>Especifica tipo</label>
+              <input type="text" id="business_type_other" name="business_type_other" />
+              <span class="error" id="err_business_type_other"></span>
+            </div>
+
+            <div class="field">
+              <label>Los horarios de negocio son los que están en Google</label>
+              <select id="hours_google" name="hours_google" required>
+                <option value="">Selecciona…</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+            <div id="manual_hours" class="hide">
+              <div class="field"><label>Lunes</label><input id="hours_mon" name="hours_mon" required placeholder="09:00-18:00" pattern="^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$" title="Formato HH:MM-HH:MM" inputmode="numeric" /></div>
+              <div class="field"><label>Martes</label><input id="hours_tue" name="hours_tue" required placeholder="09:00-18:00" pattern="^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$" title="Formato HH:MM-HH:MM" inputmode="numeric" /></div>
+              <div class="field"><label>Miércoles</label><input id="hours_wed" name="hours_wed" required placeholder="09:00-18:00" pattern="^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$" title="Formato HH:MM-HH:MM" inputmode="numeric" /></div>
+              <div class="field"><label>Jueves</label><input id="hours_thu" name="hours_thu" required placeholder="09:00-18:00" pattern="^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$" title="Formato HH:MM-HH:MM" inputmode="numeric" /></div>
+              <div class="field"><label>Viernes</label><input id="hours_fri" name="hours_fri" required placeholder="09:00-18:00" pattern="^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$" title="Formato HH:MM-HH:MM" inputmode="numeric" /></div>
+              <div class="field"><label>Sábado</label><input id="hours_sat" name="hours_sat" required placeholder="09:00-18:00" pattern="^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$" title="Formato HH:MM-HH:MM" inputmode="numeric" /></div>
+              <div class="field"><label>Domingo</label><input id="hours_sun" name="hours_sun" required placeholder="09:00-18:00" pattern="^([01]\d|2[0-3]):[0-5]\d-([01]\d|2[0-3]):[0-5]\d$" title="Formato HH:MM-HH:MM" inputmode="numeric" /></div>
+            </div>
+
+            <div class="field">
+              <label>Instagram</label>
+              <input type="text" id="instagram" name="instagram" required />
+            </div>
+            <div class="field">
+              <label>Teléfono contacto</label>
+              <input type="tel" id="phone" name="phone" required />
+            </div>
+          </div>
+
+          <div class="section">
+            <h4>Parte 2: Perfil Operativo</h4>
+            <div class="field">
+              <label>¿Tienen menú online?</label>
+              <select id="menu_online" name="menu_online" required>
+                <option value="">Selecciona…</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+            <div id="menu_submission" class="hide">
+              <div class="field">
+                <label>Método</label>
+                <select id="menu_submit_method" name="menu_submit_method">
+                  <option value="">Selecciona…</option>
+                  <option value="link">Link</option>
+                  <option value="file">Foto/Archivo</option>
+                </select>
+              </div>
+              <div class="field hide" id="menu_link_wrap">
+                <label>Link del menú</label>
+                <input id="menu_link" name="menu_link" type="url" />
+              </div>
+              <div class="field hide" id="menu_files_wrap">
+                <label>Subir archivo(s) del menú</label>
+                <input id="menu_files" name="menu_files" type="file" multiple />
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Música usualmente</label>
+              <div>
+                <label><input type="checkbox" name="music_types" value="Pop"> Pop</label>
+                <label><input type="checkbox" name="music_types" value="Salsa"> Salsa</label>
+                <label><input type="checkbox" name="music_types" value="Bachata"> Bachata</label>
+                <label><input type="checkbox" name="music_types" value="Merengue"> Merengue</label>
+                <label><input type="checkbox" name="music_types" value="Reggaeton"> Reggaeton</label>
+                <label><input type="checkbox" name="music_types" value="Techno"> Techno</label>
+                <label><input type="checkbox" name="music_types" value="Trap"> Trap</label>
+                <label><input type="checkbox" name="music_types" value="House Music"> House Music</label>
+                <label><input type="checkbox" name="music_types" value="Other"> Other</label>
+              </div>
+              <div class="field hide" id="music_other_wrap"><label>Especifica otro</label><input id="music_other" name="music_other" /></div>
+            </div>
+
+            <div class="field">
+              <label>¿Tienen música en vivo?</label>
+              <select id="live_music" name="live_music" required>
+                <option value="">Selecciona…</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+            <div id="live_music_wrap" class="hide">
+              <div class="field"><label>Tipo música en vivo</label><input id="live_music_type" name="live_music_type" required /></div>
+              <div class="field">
+                <label>Días música en vivo</label>
+                <div>
+                  <label><input type="checkbox" name="live_music_days" value="Lunes"> Lunes</label>
+                  <label><input type="checkbox" name="live_music_days" value="Martes"> Martes</label>
+                  <label><input type="checkbox" name="live_music_days" value="Miércoles"> Miércoles</label>
+                  <label><input type="checkbox" name="live_music_days" value="Jueves"> Jueves</label>
+                  <label><input type="checkbox" name="live_music_days" value="Viernes"> Viernes</label>
+                  <label><input type="checkbox" name="live_music_days" value="Sábado"> Sábado</label>
+                  <label><input type="checkbox" name="live_music_days" value="Domingo"> Domingo</label>
+                  <label><input type="checkbox" name="live_music_days" value="Otros"> Otros</label>
+                </div>
+                <div class="field hide" id="live_music_days_other_wrap"><label>Especifica días otros</label><input id="live_music_days_other" name="live_music_days_other" /></div>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Días de mayor tráfico</label>
+              <div>
+                <label><input type="checkbox" name="busy_days" value="Lunes"> Lunes</label>
+                <label><input type="checkbox" name="busy_days" value="Martes"> Martes</label>
+                <label><input type="checkbox" name="busy_days" value="Miércoles"> Miércoles</label>
+                <label><input type="checkbox" name="busy_days" value="Jueves"> Jueves</label>
+                <label><input type="checkbox" name="busy_days" value="Viernes"> Viernes</label>
+                <label><input type="checkbox" name="busy_days" value="Sábado"> Sábado</label>
+                <label><input type="checkbox" name="busy_days" value="Domingo"> Domingo</label>
+              </div>
+            </div>
+
+            <div class="field">
+              <label>Tráfico</label>
+              <div style="display:flex; align-items:center; gap:12px;">
+                <input type="range" id="traffic_level" name="traffic_level" min="1" max="5" step="1" required />
+                <div id="traffic_display" class="mini">3 — Medio</div>
+              </div>
+              <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--muted); margin-top:6px;">
+                <div>1</div><div>2</div><div>3</div><div>4</div><div>5</div>
+              </div>
+              <div class="mini">1 = Vacío, 5 = Lleno</div>
+            </div>
+            <div class="field"><label>Tipo de clientela</label><input id="clientele" name="clientele" required /></div>
+            <div class="field">
+              <label>¿Tienes promociones activas?</label>
+              <select id="promos_active" name="promos_active" required>
+                <option value="">Selecciona…</option>
+                <option value="si">Sí</option>
+                <option value="no">No</option>
+              </select>
+            </div>
+            <div class="field hide" id="promos_details_wrap"><label>Detalles de promociones</label><textarea id="promos_details" name="promos_details"></textarea></div>
+          </div>
+
+          <div class="section">
+            <h4>Parte 3: Precios y Sistema</h4>
+            <div class="field"><label>Cerveza más barata - Nombre</label><input id="beer_cheapest_name" name="beer_cheapest_name" required /></div>
+            <div class="field"><label>Cerveza más barata - Precio</label><input id="beer_cheapest_price" name="beer_cheapest_price" type="number" step="0.01" required /></div>
+            <div class="field"><label>Cerveza más cara - Nombre</label><input id="beer_priciest_name" name="beer_priciest_name" required /></div>
+            <div class="field"><label>Cerveza más cara - Precio</label><input id="beer_priciest_price" name="beer_priciest_price" type="number" step="0.01" required /></div>
+            <div class="field"><label>Trago más barato - Nombre</label><input id="drink_cheapest_name" name="drink_cheapest_name" required /></div>
+            <div class="field"><label>Trago más barato - Precio</label><input id="drink_cheapest_price" name="drink_cheapest_price" type="number" step="0.01" required /></div>
+            <div class="field"><label>Trago más caro - Nombre</label><input id="drink_priciest_name" name="drink_priciest_name" required /></div>
+            <div class="field"><label>Trago más caro - Precio</label><input id="drink_priciest_price" name="drink_priciest_price" type="number" step="0.01" required /></div>
+
+            <div class="field">
+              <label>Sistema para cobrar</label>
+              <select id="pos_system" name="pos_system" required>
+                <option value="">Selecciona…</option>
+                <option value="Clover">Clover</option>
+                <option value="Evertec">Evertec</option>
+                <option value="Otro">Otro</option>
+              </select>
+            </div>
+            <div class="field hide" id="pos_other_wrap"><label>Especifica sistema</label><input id="pos_other" name="pos_other" /></div>
+            <div class="field" id="notas_wrap">
+              <label>Notas (opcional)</label>
+              <textarea id="notas" name="notas" placeholder="Anota observaciones breves..." rows="3"></textarea>
+            </div>
+          </div>
+
+          <div class="hr"></div>
+          <div class="btns" style="justify-content:flex-start;">
+            <button class="btn" id="btnSave" type="button" disabled>Guardar y Continuar</button>
+          </div>
+        </form>
+      </div>
+    ` : `
+      <div id="consent_block">
+        <div class="field">
+          <label>El encargado del negocio autoriza someterse a un breve formulario para propósitos de uso en la plataforma</label>
+          <select id="consentimiento_ok">
+            <option value="" ${state.consentimiento.ok === null ? "selected":""}>Selecciona…</option>
+            <option value="si" ${state.consentimiento.ok === true ? "selected":""}>Sí</option>
+            <option value="no" ${state.consentimiento.ok === false ? "selected":""}>No</option>
+          </select>
+        </div>
+
+        ${noAutoridad ? statusBox("warn","No está el encargado: marca 'No autorizó' o solicita seguimiento.") : ""}
+
+        <div class="btns">
+          <button class="btn ghost" id="btnBack">Atrás</button>
+          <button class="btn" id="btnNext" ${state.consentimiento.ok === null ? "disabled" : ""}>Continuar</button>
+        </div>
+      </div>
+    `}
+  `;
+}
+
+function screenSubmit(){
+  const ready = isReadyToSubmit();
+  const last = state.submit.last_status || "Listo para enviar cuando estés ready.";
+  const box =
+    state.submit.last_ok === true ? statusBox("good", last) :
+    state.submit.last_ok === false ? statusBox("bad", last) :
+    statusBox("warn", last);
+  const resultadoText = state.resultado.tipo === 'autorizo' ? 'Autorizó a crear el perfil' : (state.resultado.tipo === 'no_autoriza' ? 'No autorizó a crear el perfil' : (state.resultado.tipo === 'seguimiento' ? 'Pidió seguimiento' : '—'));
+
+  return `
+    <div class="hr"></div>
+
+      <div class="script">
+        ${getSummaryHtml()}
+      </div>
+
+    <div class="hr"></div>
+
+    ${ready ? statusBox("good","OK. Puedes enviar.") : statusBox("warn","Faltan mínimos. Completa empleado + local + resultado.")}
+
+    <div class="btns">
+      <button class="btn ghost" id="btnBack">Atrás</button>
+      <button class="btn coral" id="btnSubmit" ${ready ? "" : "disabled"}>Someter</button>
+      <!-- Export JSON removed from summary per UI update -->
+    </div>
+
+    ${box}
+  `;
+}
+
+/** =========================
+ *  VALIDATION + PAYLOAD
+ *  ========================= */
+function isReadyToSubmit(){
+  if (!state.meta.empleado.trim()) return false;
+  if (!state.local.nombre.trim()) return false;
+  if (!state.resultado.tipo.trim()) return false;
+  return true;
+}
+
+// Save data to localStorage for venues board
+function saveToDatabase(payload) {
+  function getKey(type){
+    const v = localStorage.getItem('db_version') || '';
+    if(type === 'venues') return v === 'v2' ? 'venuesDatabase_v2' : 'venuesDatabase';
+    return type;
+  }
+  const dbKey = getKey('venues');
+  const existingData = JSON.parse(localStorage.getItem(dbKey)) || [];
+  // Merge any captured form fields (instagram, phone) into the payload when available
+  try{
+    const formData = (window.state && state.form && state.form.data) ? state.form.data : {};
+    // common keys that may exist in different forms
+    if(formData.instagram) payload.instagram = formData.instagram;
+    if(formData.phone) payload.phone = formData.phone;
+    if(formData.manager_name) payload.manager_name = formData.manager_name;
+    if(formData.business_name) payload.business_name = formData.business_name;
+    if(formData.business_zone) payload.business_zone = formData.business_zone;
+    // also pull from state if available (older code paths)
+    if(state.local && state.local.nombre) payload.business_name = payload.business_name || state.local.nombre;
+    if(state.local && state.local.zona) payload.business_zone = payload.business_zone || state.local.zona;
+    if(state.autoridad && state.autoridad.nombre) payload.manager_name = payload.manager_name || state.autoridad.nombre;
+  }catch(e){ /* ignore if state not available */ }
+  // add created timestamp
+  if(!payload.created_at) payload.created_at = (new Date()).toISOString();
+  // If the workspace is using v2 DB schema, build canonical v2 entry with only agreed fields
+  const activeVersion = localStorage.getItem('db_version') || '';
+  if(activeVersion === 'v2'){
+    // helper to safely read nested values
+    const form = (state.form && state.form.data) ? state.form.data : {};
+    const v2Entry = {
+      // 1-14 core
+      employee: state.meta && state.meta.empleado || payload.empleado || '',
+      contact_type: state.meta && state.meta.tipo_contacto || payload.tipo_contacto || '',
+      business_name: payload.business_name || payload.local || (state.local && state.local.nombre) || '',
+      business_zone: payload.business_zone || payload.local_zona || (state.local && state.local.zona) || '',
+      business_zone_custom: payload.local_zona_custom || (state.local && state.local.zona_custom) || '',
+      precheck_app_ok: (payload.precheck_app_ok !== undefined) ? payload.precheck_app_ok : (state.precheck && state.precheck.app_ok) || false,
+      precheck_internet_ok: (payload.precheck_internet_ok !== undefined) ? payload.precheck_internet_ok : (state.precheck && state.precheck.internet_ok) || false,
+      precheck_pitch_ready: (payload.precheck_pitch_ready !== undefined) ? payload.precheck_pitch_ready : (state.precheck && state.precheck.pitch_ready) || false,
+      manager_present: (payload.autoridad_esta !== undefined) ? payload.autoridad_esta : (state.autoridad && state.autoridad.esta) || false,
+      pitch_given: (payload.pitch_dicho !== undefined) ? payload.pitch_dicho : (state.pitch && state.pitch.dicho) || false,
+      result: payload.resultado || (state.resultado && state.resultado.tipo) || '',
+      followup_date: payload.seguimiento_fecha || (state.resultado && state.resultado.seguimiento_fecha) || '',
+      consent: (payload.consentimiento !== undefined) ? payload.consentimiento : (state.consentimiento && state.consentimiento.ok) || false,
+      form_saved: (payload.form_enviado !== undefined) ? payload.form_enviado : (state.form && state.form.enviado) || false,
+
+      // 15-51 form fields (only if form_saved)
+      manager_name: payload.manager_name || payload.contacto_nombre || (state.autoridad && state.autoridad.nombre) || '',
+      business_type: form.business_type || payload.business_type || '',
+      business_type_other: form.business_type_other || payload.business_type_other || '',
+      hours_google: form.hours_google || payload.hours_google || '',
+      hours: {
+        mon: form.hours_mon || payload.hours_mon || '',
+        tue: form.hours_tue || payload.hours_tue || '',
+        wed: form.hours_wed || payload.hours_wed || '',
+        thu: form.hours_thu || payload.hours_thu || '',
+        fri: form.hours_fri || payload.hours_fri || '',
+        sat: form.hours_sat || payload.hours_sat || '',
+        sun: form.hours_sun || payload.hours_sun || ''
+      },
+      instagram: (payload.instagram !== undefined) ? payload.instagram : (form.instagram || form.instagram_handle || ''),
+      phone: (payload.phone !== undefined) ? payload.phone : (form.phone || payload.contacto_tel || (state.autoridad && state.autoridad.tel) || ''),
+      menu_online: form.menu_online || payload.menu_online || '',
+      menu_submission_method: form.menu_submit_method || payload.menu_submission_method || '',
+      menu_link: form.menu_link || payload.menu_link || '',
+      menu_files: null,
+      music_types: form.music_types || payload.music_types || [],
+      music_other: form.music_other || payload.music_other || '',
+      live_music: form.live_music || payload.live_music || '',
+      live_music_type: form.live_music_type || payload.live_music_type || '',
+      live_music_days: form.live_music_days || payload.live_music_days || [],
+      live_music_days_other: form.live_music_days_other || payload.live_music_days_other || '',
+      busy_days: form.busy_days || payload.busy_days || [],
+      traffic_level: form.traffic_level || payload.traffic_level || '',
+      clientele: form.clientele || payload.clientele || '',
+      promos_active: form.promos_active || payload.promos_active || '',
+      promos_details: form.promos_details || payload.promos_details || '',
+      beer_cheapest_name: form.beer_cheapest_name || payload.beer_cheapest_name || '',
+      beer_cheapest_price: form.beer_cheapest_price || payload.beer_cheapest_price || '',
+      beer_priciest_name: form.beer_priciest_name || payload.beer_priciest_name || '',
+      beer_priciest_price: form.beer_priciest_price || payload.beer_priciest_price || '',
+      drink_cheapest_name: form.drink_cheapest_name || payload.drink_cheapest_name || '',
+      drink_cheapest_price: form.drink_cheapest_price || payload.drink_cheapest_price || '',
+      drink_priciest_name: form.drink_priciest_name || payload.drink_priciest_name || '',
+      drink_priciest_price: form.drink_priciest_price || payload.drink_priciest_price || '',
+      pos_system: form.pos_system || payload.pos_system || '',
+      pos_other: form.pos_other || payload.pos_other || '',
+      notas: state.notas || form.notas || payload.notas || '',
+
+      // traceability
+      started_at: state.meta && state.meta.started_at || payload.started_at || '',
+      created_at: payload.created_at || (new Date()).toISOString(),
+      _raw: payload
+    };
+    existingData.push(v2Entry);
+    console.log('saveToDatabase: saved v2 entry', v2Entry, 'to', dbKey);
+  } else {
+    existingData.push(payload);
+    console.log('saveToDatabase: saved legacy payload', payload, 'to', dbKey);
+  }
+  localStorage.setItem(dbKey, JSON.stringify(existingData));
+}
+
+// Add functionality to the new 'Someter' button
+function setupSubmitButton() {
+  const btnSubmit = document.getElementById('btnSubmit');
+  if (!btnSubmit) return;
+
+  btnSubmit.addEventListener('click', () => {
+    if (!isReadyToSubmit()) {
+      alert('Por favor, completa todos los campos requeridos antes de someter.');
+      return;
+    }
+
+    const payload = buildPayload();
+    // best-effort capture of visible bar-form fields in case form wasn't explicitly saved
+    try{
+      const managerEl = document.getElementById('manager_name');
+      if(managerEl && managerEl.value && !payload.manager_name) payload.manager_name = managerEl.value.trim();
+      const instaEl = document.getElementById('instagram');
+      if(instaEl && instaEl.value && !payload.instagram) payload.instagram = instaEl.value.trim();
+      const phoneEl = document.getElementById('phone');
+      if(phoneEl && phoneEl.value && !payload.phone) payload.phone = phoneEl.value.trim();
+    }catch(e){}
+    // If manager_name still missing, ask the user to confirm (helps when form wasn't saved)
+    if(!payload.manager_name || !payload.manager_name.toString().trim()){
+      const mgr = prompt('Nombre del encargado (dejar vacío si no lo sabes)');
+      if(mgr !== null){ payload.manager_name = mgr.toString().trim(); }
+    }
+    saveToDatabase(payload);
+    alert('Negocio sometido y guardado en la base de datos local. Ahora se abrirá la tabla de Venues.');
+    // Redirect to venue-board so user sees the saved entry in the master table
+    window.location.href = 'venue-board.html';
+  });
+}
+
+// Call setupSubmitButton on page load
+setupSubmitButton();
+
+// Placeholder for opening the questionnaire — implement later.
+function openQuestionnaire(){
+  console.log("openQuestionnaire");
+  state.consentimiento.opened = true;
+  saveState();
+  render();
+}
+
+// Helpers for the bar form: show/hide conditional blocks, clear values and validate
+function clearInputs(container){
+  if(!container) return;
+  container.querySelectorAll('input,textarea,select').forEach(el=>{
+    if(el.type === 'checkbox' || el.type === 'radio') el.checked = false;
+    else if(el.type === 'file') el.value = null;
+    else el.value = '';
+    el.removeAttribute('required');
+  });
+}
+
+function validateBarForm(){
+  const form = document.getElementById('barForm');
+  if(!form) return false;
+  // helper: determine if an element is actually visible to the user
+  function isVisible(el){
+    if(!el) return false;
+    if (el.closest && el.closest('.hide')) return false;
+    try{
+      const cs = window.getComputedStyle(el);
+      if(cs && (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0')) return false;
+    }catch(e){}
+    const rects = el.getClientRects();
+    if(!rects || rects.length === 0) return false;
+    return true;
+  }
+
+  // Validate visible HTML5-constrained fields
+  const visibles = Array.from(form.querySelectorAll('input,select,textarea')).filter(isVisible);
+  for(const el of visibles){ if(!el.checkValidity()) return false; }
+
+  // music_types at least one if the group is visible
+  const musicChecks = Array.from(document.querySelectorAll('input[name="music_types"]')).filter(isVisible);
+  if(musicChecks.length > 0 && !musicChecks.some(i=>i.checked)) return false;
+
+  // busy_days at least one if visible
+  const busyChecks = Array.from(document.querySelectorAll('input[name="busy_days"]')).filter(isVisible);
+  if(busyChecks.length > 0 && !busyChecks.some(i=>i.checked)) return false;
+
+  // live_music conditional
+  const liveMusicSel = document.getElementById('live_music');
+  if(isVisible(liveMusicSel) && liveMusicSel.value === 'si'){
+    const liveDays = Array.from(document.querySelectorAll('input[name="live_music_days"]')).filter(isVisible);
+    if(liveDays.length > 0 && !liveDays.some(i=>i.checked)) return false;
+  }
+
+  // menu submission conditional
+  const menuOnline = document.getElementById('menu_online');
+  if(isVisible(menuOnline) && menuOnline.value === 'si'){
+    const method = document.getElementById('menu_submit_method');
+    if(isVisible(method) && method.value === 'link'){
+      const link = document.getElementById('menu_link');
+      if(!isVisible(link) || !link.value) return false;
+    }
+    if(isVisible(method) && method.value === 'file'){
+      const files = document.getElementById('menu_files');
+      if(!isVisible(files) || !files.files || files.files.length === 0) return false;
+    }
+  }
+
+  // promos
+  const promos = document.getElementById('promos_active');
+  if(isVisible(promos) && promos.value === 'si'){
+    const pd = document.getElementById('promos_details');
+    if(!isVisible(pd) || !pd.value.trim()) return false;
+  }
+
+  // pos system
+  const pos = document.getElementById('pos_system');
+  if(isVisible(pos) && pos.value === 'Otro'){
+    const po = document.getElementById('pos_other');
+    if(!isVisible(po) || !po.value.trim()) return false;
+  }
+
+  // business type other
+  const bt = document.getElementById('business_type');
+  if(isVisible(bt) && bt.value === 'Other'){
+    const bto = document.getElementById('business_type_other');
+    if(!isVisible(bto) || !bto.value.trim()) return false;
+  }
+
+  return true;
+}
+
+function populateBarFormFromState(){
+  const form = document.getElementById('barForm');
+  if(!form) return;
+  const data = (state.form && state.form.data) || {};
+  Object.keys(data).forEach(k=>{
+    const val = data[k];
+    // try name selector first, then id
+    const els = form.querySelectorAll(`[name="${k}"], #${k}`);
+    if(!els || els.length === 0) return;
+    els.forEach(el=>{
+      if(el.type === 'checkbox'){
+        if(Array.isArray(val)) el.checked = val.includes(el.value);
+        else el.checked = !!val && (el.value === val);
+        return;
+      }
+      if(el.type === 'radio'){
+        el.checked = (el.value === val);
+        return;
+      }
+      if(el.tagName === 'SELECT'){
+        try{ el.value = val; }catch(e){}
+        return;
+      }
+      // default
+      el.value = val;
+    });
+  });
+}
+
+function setupBarFormBindings(){
+  const form = document.getElementById('barForm');
+  if(!form) return;
+
+  // Populate form with saved values (if any)
+  populateBarFormFromState();
+
+  const byId = (id)=> document.getElementById(id);
+
+  // helper to toggle required and visibility
+  function toggleWrap(wrapId, show, requiredSelector){
+    const w = byId(wrapId);
+    console.log('toggleWrap called for', wrapId, 'show:', show, 'element found:', !!w);
+    if(!w) return;
+    if(show){
+      w.classList.remove('hide');
+      console.log('Showing wrap:', wrapId);
+      if(requiredSelector){ w.querySelectorAll(requiredSelector).forEach(i=>i.setAttribute('required','')); }
+    } else {
+      // clear values inside
+      w.classList.add('hide');
+      console.log('Hiding wrap:', wrapId);
+      w.querySelectorAll('input,textarea,select').forEach(i=>{ if(i.type==='checkbox'||i.type==='radio') i.checked = false; else i.value=''; i.removeAttribute('required'); });
+    }
+  }
+
+  // business_type -> other
+  const businessType = byId('business_type');
+  businessType?.addEventListener('change', (e)=>{
+    const show = e.target.value === 'Other';
+    console.log('business_type changed to:', e.target.value, 'show other:', show);
+    toggleWrap('business_type_other_wrap', show, 'input');
+    const btn = byId('btnSave'); if(btn) btn.disabled = !validateBarForm();
+  });
+
+  // Delegated handler as fallback in case specific listener isn't attached early
+  form.addEventListener('change', (e)=>{
+    const t = e.target;
+    if(!t) return;
+    if(t.id === 'business_type' || t.name === 'business_type'){
+      const show = (t.value || '') === 'Other';
+      console.log('delegated business_type change', t.value, 'show', show);
+      toggleWrap('business_type_other_wrap', show, 'input');
+      const btn = byId('btnSave'); if(btn) btn.disabled = !validateBarForm();
+    }
+  });
+
+  // hours_google -> manual hours
+  const hoursGoogle = byId('hours_google');
+  hoursGoogle?.addEventListener('change', (e)=>{
+    const show = e.target.value === 'no';
+    toggleWrap('manual_hours', show, 'input');
+    const btn = byId('btnSave'); btn.disabled = !validateBarForm();
+  });
+
+  // menu online -> submission
+  const menuOnline = byId('menu_online');
+  menuOnline?.addEventListener('change', (e)=>{
+    const show = e.target.value === 'si';
+    toggleWrap('menu_submission', show, 'select,input');
+    const btn = byId('btnSave'); btn.disabled = !validateBarForm();
+  });
+  const menuMethod = byId('menu_submit_method');
+  menuMethod?.addEventListener('change', (e)=>{
+    const v = e.target.value;
+    toggleWrap('menu_link_wrap', v==='link', 'input');
+    toggleWrap('menu_files_wrap', v==='file', 'input');
+    const btn = byId('btnSave'); btn.disabled = !validateBarForm();
+  });
+
+  // music types other
+  const musicChecks = Array.from(document.querySelectorAll('input[name="music_types"]'));
+  musicChecks.forEach(ch=> ch.addEventListener('change', ()=>{
+    const otherChecked = document.querySelector('input[name="music_types"][value="Other"]')?.checked;
+    toggleWrap('music_other_wrap', !!otherChecked, 'input');
+    const btn = byId('btnSave'); btn.disabled = !validateBarForm();
+  }));
+
+  // initial visibility based on current values
+  try{
+    toggleWrap('business_type_other_wrap', businessType && businessType.value === 'Other', 'input');
+    toggleWrap('manual_hours', hoursGoogle && hoursGoogle.value === 'no', 'input');
+    toggleWrap('menu_submission', menuOnline && menuOnline.value === 'si', 'select,input');
+    if(menuMethod){ toggleWrap('menu_link_wrap', menuMethod.value === 'link', 'input'); toggleWrap('menu_files_wrap', menuMethod.value === 'file', 'input'); }
+    const otherChecked = document.querySelector('input[name="music_types"][value="Other"]')?.checked;
+    toggleWrap('music_other_wrap', !!otherChecked, 'input');
+    const liveMusicSel = byId('live_music');
+    toggleWrap('live_music_wrap', liveMusicSel && liveMusicSel.value === 'si', 'input');
+    const liveDaysOther = Array.from(document.querySelectorAll('input[name="live_music_days"]')).some(i=>i.checked && i.value === 'Otros');
+    toggleWrap('live_music_days_other_wrap', liveDaysOther, 'input');
+    const promosSel = byId('promos_active'); toggleWrap('promos_details_wrap', promosSel && promosSel.value === 'si', 'textarea');
+    const posSel = byId('pos_system'); toggleWrap('pos_other_wrap', posSel && posSel.value === 'Otro', 'input');
+  }catch(e){}
+
+  // live music
+  const liveMusic = byId('live_music');
+  liveMusic?.addEventListener('change', (e)=>{
+    const show = e.target.value === 'si';
+    toggleWrap('live_music_wrap', show, 'input');
+    const btn = byId('btnSave'); btn.disabled = !validateBarForm();
+  });
+  const liveDays = Array.from(document.querySelectorAll('input[name="live_music_days"]'));
+  liveDays.forEach(i=> i.addEventListener('change', ()=>{
+    const others = document.querySelector('input[name="live_music_days"][value="Otros"]')?.checked;
+    toggleWrap('live_music_days_other_wrap', !!others, 'input');
+    const btn = byId('btnSave'); btn.disabled = !validateBarForm();
+  }));
+
+  // promos
+  const promos = byId('promos_active');
+  promos?.addEventListener('change', (e)=>{
+    const show = e.target.value === 'si';
+    toggleWrap('promos_details_wrap', show, 'textarea');
+    const btn = byId('btnSave'); btn.disabled = !validateBarForm();
+  });
+
+  // busy days / traffic / clientele changes
+  Array.from(document.querySelectorAll('input[name="busy_days"]')).forEach(i=> i.addEventListener('change', ()=>{ byId('btnSave').disabled = !validateBarForm(); }));
+  // traffic slider: update live display and validation
+  const trafficMap = { '1': 'Vacío', '2': 'Poco', '3': 'Medio', '4': 'Alto', '5': 'Lleno' };
+  const trafficDisplay = byId('traffic_display');
+  const trafficInput = byId('traffic_level');
+  if(trafficInput){
+    const setTrafficDisplay = ()=>{
+      const v = trafficInput.value || '3';
+      if(trafficDisplay) trafficDisplay.textContent = `${v} — ${trafficMap[v] || ''}`;
+    };
+    trafficInput.addEventListener('input', ()=>{ setTrafficDisplay(); const btn = byId('btnSave'); if(btn) btn.disabled = !validateBarForm(); });
+    // initialize
+    setTrafficDisplay();
+  }
+  byId('clientele')?.addEventListener('input', ()=>{ byId('btnSave').disabled = !validateBarForm(); });
+
+  // pos system
+  const pos = byId('pos_system');
+  pos?.addEventListener('change', (e)=>{ toggleWrap('pos_other_wrap', e.target.value === 'Otro', 'input'); byId('btnSave').disabled = !validateBarForm(); });
+
+  // file change / inputs change -> validate
+  form.querySelectorAll('input,select,textarea').forEach(el=> el.addEventListener('input', ()=>{ const btn = document.getElementById('btnSave'); if(btn) btn.disabled = !validateBarForm(); }));
+  form.querySelectorAll('input[type=file]').forEach(el=> el.addEventListener('change', ()=>{ const btn = document.getElementById('btnSave'); if(btn) btn.disabled = !validateBarForm(); }));
+
+  // Persist every change into state.form.data so draft continuation restores answers
+  form.querySelectorAll('input,select,textarea').forEach(el=>{
+    const ev = (el.tagName === 'SELECT' || el.type === 'checkbox' || el.type === 'radio' || el.type === 'file') ? 'change' : 'input';
+    el.addEventListener(ev, ()=>{
+      state.form = state.form || {};
+      state.form.data = state.form.data || {};
+      const name = el.name || el.id;
+      if(!name) return;
+      if(el.type === 'checkbox'){
+        const group = Array.from(form.querySelectorAll(`input[name="${name}"]`));
+        state.form.data[name] = group.filter(i=>i.checked).map(i=>i.value);
+      } else if(el.type === 'radio'){
+        const sel = form.querySelector(`input[name="${name}"]:checked`);
+        state.form.data[name] = sel ? sel.value : '';
+      } else if(el.type === 'file'){
+        // skip storing file contents, just note presence
+        state.form.data[name] = (el.files && el.files.length) ? (el.files.length) : 0;
+      } else if(el.tagName === 'SELECT' && el.multiple){
+        state.form.data[name] = Array.from(el.selectedOptions).map(o=>o.value);
+      } else {
+        state.form.data[name] = el.value;
+      }
+      saveState();
+    });
+  });
+
+  // initial validation pass
+  const btn = document.getElementById('btnSave'); if(btn) btn.disabled = !validateBarForm();
+
+  // btnSave handler (for now just log and mark saved)
+  const btnSave = document.getElementById('btnSave');
+  if(btnSave) btnSave.addEventListener('click', ()=>{
+    if(!validateBarForm()) return;
+    const formEl = document.getElementById('barForm');
+    if(!formEl) return;
+
+    // collect visible inputs
+    const vals = {};
+    Array.from(formEl.querySelectorAll('input,select,textarea')).forEach(el=>{
+      // skip hidden blocks
+      if(el.closest && el.closest('.hide')) return;
+      if(el.offsetParent === null && el.type !== 'range') return;
+
+      const name = el.name || el.id || null;
+      if(!name) return;
+
+      if(el.type === 'checkbox'){
+        if(!vals[name]) vals[name] = [];
+        if(el.checked) vals[name].push(el.value);
+        return;
+      }
+      if(el.type === 'radio'){
+        if(el.checked) vals[name] = el.value;
+        return;
+      }
+      if(el.tagName === 'SELECT' && el.multiple){
+        vals[name] = Array.from(el.selectedOptions).map(o=>o.value);
+        return;
+      }
+      // file inputs: skip storing files
+      if(el.type === 'file') return;
+
+      vals[name] = el.value;
+    });
+
+    // persist to state
+    state.form = state.form || {};
+    state.form.data = vals;
+    // copy contained notes into state.notas (no texto libre)
+    if(vals.notas !== undefined) state.notas = vals.notas;
+    state.form.enviado = true;
+    // close questionnaire
+    state.consentimiento.opened = false;
+    saveState();
+
+    // go to submit/Resumen screen
+    const submitIndex = steps.findIndex(s=>s.key === 'submit');
+    if(submitIndex >= 0) goToStep(submitIndex);
+  });
+}
+
+function buildPayload(){
+  return {
+    token: CONFIG.TOKEN,
+    started_at: state.meta.started_at,
+    empleado: state.meta.empleado,
+    tipo_contacto: state.meta.tipo_contacto,
+
+    precheck_app_ok: state.precheck.app_ok,
+    precheck_internet_ok: state.precheck.internet_ok,
+    precheck_pitch_ready: state.precheck.pitch_ready,
+
+    autoridad_esta: state.autoridad.esta,
+    contacto_nombre: state.autoridad.nombre,
+    contacto_cargo: state.autoridad.cargo,
+    contacto_tel: state.autoridad.tel,
+
+    pitch_dicho: state.pitch.dicho,
+
+    local: state.local.nombre,
+    direccion: state.local.direccion,
+    local_zona: state.local.zona,
+    local_zona_custom: state.local.zona_custom,
+
+    // prefer values captured in the bar form when available
+    manager_name: (state.form && state.form.data && state.form.data.manager_name) ? state.form.data.manager_name : (state.autoridad && state.autoridad.nombre) || '',
+    phone: (state.form && state.form.data && state.form.data.phone) ? state.form.data.phone : (state.autoridad && state.autoridad.tel) || '',
+    instagram: (state.form && state.form.data && (state.form.data.instagram || state.form.data.instagram_handle)) ? (state.form.data.instagram || state.form.data.instagram_handle) : '',
+
+    resultado: state.resultado.tipo,
+    seguimiento_fecha: state.resultado.seguimiento_fecha,
+
+    consentimiento: state.consentimiento.ok,
+    form_enviado: state.form.enviado,
+
+    interes: state.interes,
+    notas: state.notas,
+    // Correo destino sugerido para notificaciones
+    notify_email: CONFIG.NOTIFY_EMAIL,
+  };
+}
+
+function getSummaryHtml(){
+  const rows = [];
+  function add(label, value){
+    if(value === undefined || value === null) return;
+    const v = String(value).toString().trim();
+    if(!v || v === '—') return;
+    rows.push({ label, value: escapeHtml(v) });
+  }
+
+  add('Empleado', state.meta.empleado || '—');
+  add('Tipo', state.meta.tipo_contacto === 'calle' ? 'Presencial' : (state.meta.tipo_contacto === 'telefono' ? 'Por teléfono' : state.meta.tipo_contacto));
+  add('Local', state.local.nombre || '—');
+  add('Zona', state.local.zona === 'other' ? (state.local.zona_custom || '') : (state.local.zona || ''));
+  add('Encargado', state.autoridad.esta===true ? 'Sí' : state.autoridad.esta===false ? 'No' : '');
+  const resultadoText = state.resultado.tipo === 'autorizo' ? 'Autorizó a crear el perfil' : (state.resultado.tipo === 'no_autoriza' ? 'No autorizó a crear el perfil' : (state.resultado.tipo === 'seguimiento' ? 'Pidió seguimiento' : ''));
+  add('Resultado', resultadoText);
+  add('¿Autoriza Form?', state.consentimiento.ok===true ? 'Sí' : state.consentimiento.ok===false ? 'No' : '');
+
+  // include a short note if the bar form was saved
+  if(state.form && state.form.enviado){ add('Formularios', 'Guardado'); }
+
+  if(rows.length === 0) return '<div class="summary"><div class="summary-header">Resumen</div><div class="mini">No hay datos para mostrar.</div></div>';
+
+  let html = '<div class="summary"><div class="summary-header">Resumen</div>';
+  html += '<div class="summary-section">';
+  rows.forEach(r=>{
+    html += `<div class="summary-row"><div class="summary-label">${r.label}</div><div class="summary-value">${r.value}</div></div>`;
+  });
+  html += '</div></div>';
+  // Append detailed form section (collapsible)
+  html += getDetailedFormHtml();
+  return html;
+}
+
+function getDetailedFormHtml(){
+  if(!state.form || !state.form.data) return '';
+  const data = state.form.data;
+  let html = '<div class="details ' + ((state.form.collapsed === false) ? '' : 'collapsed') + '">';
+  const btnText = (state.form.collapsed === false) ? 'Ocultar detalles' : 'Mostrar detalles del formulario';
+  html += `<div style="display:flex; justify-content:space-between; align-items:center;"><div class="mini">Formulario detallado</div><button id="btnToggleFormDetails" class="toggle-small">${btnText}</button></div>`;
+  html += '<div class="details-body">';
+  html += '<div style="display:grid; gap:6px; margin-top:8px;">';
+  Object.keys(data).forEach(k=>{
+    const val = data[k];
+    let display = '';
+    if(Array.isArray(val)) display = val.join(', ');
+    else display = String(val);
+    html += `<div class="summary-row"><div class="summary-label">${escapeHtml(k)}</div><div class="summary-value">${escapeHtml(display)}</div></div>`;
+  });
+  html += '</div></div></div>';
+  return html;
+}
+
+/** =========================
+ *  MAIN RENDER
+ *  ========================= */
+function render(){
+  renderStepBar();
+  const stepKey = steps[currentStepIndex].key;
+
+  let html = "";
+  if (stepKey === "setup") html = screenSetup();
+  else if (stepKey === "precheck") html = screenPrecheck();
+  else if (stepKey === "autoridad") html = screenAutoridad();
+  else if (stepKey === "pitch") html = screenPitch();
+  else if (stepKey === "resultado") html = screenResultado();
+  else if (stepKey === "submit") html = screenSubmit();
+
+  const screenBody = $("#screenBody");
+  if (screenBody) screenBody.innerHTML = html;
+  bind(stepKey);
+  saveState();
+}
+
+/** =========================
+ *  EVENTS BINDING PER SCREEN
+ *  ========================= */
+function bind(stepKey){
+  $("#btnReset")?.addEventListener("click", resetState);
+
+  if (stepKey === "setup"){
+    $("#tipo_contacto")?.addEventListener("change", (e)=> { state.meta.tipo_contacto = e.target.value; saveState(); });
+    const sel = $("#empleado_select");
+    const otherWrap = document.getElementById('empleado_other_wrap');
+    const otherInp = document.getElementById('empleado_other');
+    sel?.addEventListener('change', (e)=>{
+      const v = e.target.value;
+      if (v === 'other'){
+        if (otherWrap) otherWrap.style.display = '';
+        state.meta.empleado = otherInp ? otherInp.value : '';
+      } else {
+        if (otherWrap) otherWrap.style.display = 'none';
+        state.meta.empleado = v;
+      }
+      saveState();
+    });
+    otherInp?.addEventListener('input', (e)=> { state.meta.empleado = e.target.value; saveState(); });
+    $("#btnNext")?.addEventListener("click", ()=> next());
+  }
+
+  if (stepKey === "precheck"){
+    $("#app_ok")?.addEventListener("change", (e)=> { state.precheck.app_ok = e.target.checked; saveState(); updatePrecheckStatus(); });
+    $("#internet_ok")?.addEventListener("change", (e)=> { state.precheck.internet_ok = e.target.checked; saveState(); updatePrecheckStatus(); });
+    $("#pitch_ready")?.addEventListener("change", (e)=> { state.precheck.pitch_ready = e.target.checked; saveState(); updatePrecheckStatus(); });
+    $("#local_nombre")?.addEventListener("input", (e)=> { state.local.nombre = e.target.value; saveState(); updatePrecheckStatus(); });
+    $("#local_zona_select")?.addEventListener("change", (e)=> {
+      const v = e.target.value;
+      if (v === 'other'){
+        document.getElementById('local_zona_custom_wrap').style.display = '';
+        state.local.zona = document.getElementById('local_zona_custom').value || '';
+      } else {
+        document.getElementById('local_zona_custom_wrap').style.display = 'none';
+        state.local.zona = v;
+      }
+      saveState();
+      updatePrecheckStatus();
+    });
+    $("#local_zona_custom")?.addEventListener("input", (e)=> { state.local.zona = e.target.value; saveState(); updatePrecheckStatus(); });
+    $("#btnBack")?.addEventListener("click", back);
+    $("#btnNext")?.addEventListener("click", next);
+  }
+
+  if (stepKey === "autoridad"){
+    $("#autoridad_esta")?.addEventListener("change", (e)=> {
+      const v = e.target.value;
+      state.autoridad.esta = (v === "si") ? true : (v === "no" ? false : null);
+
+      // Si no está autoridad, resetea pitch/consentimiento/form para evitar errores.
+        if (state.autoridad.esta === false){
+        state.pitch.dicho = false;
+        state.consentimiento.ok = null;
+        state.consentimiento.opened = false;
+        state.form.enviado = null;
+        if (!state.resultado.tipo) state.resultado.tipo = "no_autoriza";
+      }
+      render();
+    });
+    
+    $("#btnBack")?.addEventListener("click", back);
+    $("#btnNext")?.addEventListener("click", ()=> {
+      // Si no está el encargado, salta pitch y ve a resultado/submit
+      if (state.autoridad.esta === false){
+        // fuerza resultado mínimo
+        if (!state.resultado.tipo) state.resultado.tipo = "no_autoriza";
+        goToStep(4); // resultado
+      } else {
+        next();
+      }
+    });
+  }
+
+  if (stepKey === "pitch"){
+    $("#btnBack")?.addEventListener("click", back);
+    $("#pitch_dicho")?.addEventListener("change", (e)=> { state.pitch.dicho = e.target.checked; render(); });
+    $("#btnNext")?.addEventListener("click", next);
+  }
+
+  if (stepKey === "resultado"){
+    $("#btnBack")?.addEventListener("click", back);
+
+    const resSel = $("#resultado_tipo");
+    const dateInp = $("#seguimiento_fecha");
+
+    if (resSel){
+      resSel.addEventListener("change", (e)=> {
+        state.resultado.tipo = e.target.value;
+
+        // Ajuste automático para fecha: solo si selecciona 'seguimiento'
+        if (state.resultado.tipo !== "seguimiento"){
+          state.resultado.seguimiento_fecha = "";
+        } else {
+          try{
+            const started = new Date(state.meta.started_at || new Date().toISOString());
+            const minD = new Date(started.getTime() + 24 * 3600 * 1000);
+            const maxD = new Date(started.getTime() + 72 * 3600 * 1000);
+            const fmt = (d)=> `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            if (!state.resultado.seguimiento_fecha){
+              state.resultado.seguimiento_fecha = fmt(minD);
+            } else {
+              const cur = new Date(state.resultado.seguimiento_fecha + 'T00:00:00');
+              if (cur < minD) state.resultado.seguimiento_fecha = fmt(minD);
+              if (cur > maxD) state.resultado.seguimiento_fecha = fmt(maxD);
+            }
+          } catch(e){}
+        }
+        // Si 'No autorizó': limpia consentimiento y form
+        if (state.resultado.tipo === "no_autoriza"){
+          state.consentimiento.ok = null;
+          state.consentimiento.opened = false;
+          state.form.enviado = null;
+        }
+        render();
+      });
+    }
+
+    if (dateInp){
+      dateInp.addEventListener("change", (e)=> {
+        const v = e.target.value;
+        // enforce min/max based on started_at
+        try{
+          const started = new Date(state.meta.started_at || new Date().toISOString());
+          const minD = new Date(started.getTime() + 24 * 3600 * 1000);
+          const maxD = new Date(started.getTime() + 72 * 3600 * 1000);
+          const cur = new Date(v + 'T00:00:00');
+          if (cur < minD) {
+            state.resultado.seguimiento_fecha = formatYMD(minD);
+          } else if (cur > maxD){
+            state.resultado.seguimiento_fecha = formatYMD(maxD);
+          } else {
+            state.resultado.seguimiento_fecha = v;
+          }
+        } catch(e){ state.resultado.seguimiento_fecha = v; }
+        saveState();
+      });
+    }
+
+    // Bind consentimiento select so it updates state when changed (always bind)
+    const consentSel = $("#consentimiento_ok");
+    if (consentSel){
+      consentSel.addEventListener("change", (e)=>{
+        const v = e.target.value;
+        state.consentimiento.ok = (v === "si") ? true : (v === "no" ? false : null);
+        saveState();
+        render();
+      });
+    }
+
+    const btnNextEl = $("#btnNext");
+    if (btnNextEl){
+      btnNextEl.addEventListener("click", ()=> {
+        // Handler: proceed based on consentimiento selection
+        if (state.consentimiento.ok === true){
+          // Abre el cuestionario (por ahora función vacía que loggea y muestra container)
+          openQuestionnaire();
+          return;
+        }
+        if (state.consentimiento.ok === false){
+          // Redirige a la pantalla de Resumen (submit)
+          const submitIndex = steps.findIndex(s => s.key === 'submit');
+          if (submitIndex >= 0) goToStep(submitIndex);
+        }
+      });
+    }
+
+    // Volver desde el cuestionario: ocultar el contenedor y mostrar consentimiento
+    const btnQBack = $("#btnQuestionnaireBack");
+    if (btnQBack){
+      btnQBack.addEventListener("click", ()=>{
+        // Hide questionnaire and reset consentimiento selection so question shows without selection
+        state.consentimiento.opened = false;
+        state.consentimiento.ok = null;
+        saveState();
+        render();
+      });
+    }
+    // If questionnaire is open, set up form bindings
+    if (state.consentimiento.opened){
+      setupBarFormBindings();
+    }
+  }
+
+  if (stepKey === "submit"){
+    $("#btnBack")?.addEventListener("click", back);
+
+    // Nuevo botón Someter - guarda en localStorage
+    $("#btnSubmit")?.addEventListener("click", () => {
+      if (!isReadyToSubmit()) {
+        alert('Por favor, completa todos los campos requeridos antes de someter.');
+        return;
+      }
+
+      const payload = buildPayload();
+      saveToDatabase(payload);
+      alert('Negocio sometido y guardado en la base de datos local.');
+      
+      // Auto reset tras éxito para la próxima visita
+      localStorage.removeItem(STORAGE_KEY);
+      
+      // Actualizar estado
+      state.submit.last_ok = true;
+      state.submit.last_status = "Datos guardados correctamente en la base de datos.";
+      saveState();
+      render();
+    });
+
+    // Toggle detailed form view
+    document.getElementById('btnToggleFormDetails')?.addEventListener('click', ()=>{
+      state.form = state.form || {};
+      // Treat undefined as collapsed by default; clicking should toggle to expanded (false)
+      state.form.collapsed = !(state.form.collapsed !== false);
+      saveState();
+      render();
+    });
+  }
+}
+
+/** =========================
+ *  GUIDE PANEL (show / print)
+ *  ========================= */
+function showGuide(open = true){
+  const panel = document.getElementById('guidePanel');
+  if(!panel) return;
+  panel.classList.toggle('hide', !open);
+  panel.setAttribute('aria-hidden', !open);
+  if(open){
+    // ensure it's visible in viewport
+    panel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+function printGuide(){
+  const content = document.getElementById('guideContent');
+  if(!content) return;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Guion Clicks</title>
+    <style>body{font-family:system-ui,Segoe UI,Arial; padding:20px; color:#111} pre{white-space:pre-wrap; font-size:15px; line-height:1.4}</style>
+    </head><body><h2>Guion rápido — Visita (≤2 minutos)</h2><pre>${content.textContent}</pre></body></html>`;
+  const w = window.open('', '_blank');
+  if(!w) return alert('Permite ventanas emergentes para imprimir.');
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  setTimeout(()=>{ w.print(); }, 250);
+}
+
+/** =========================
+ *  BOOT
+ *  ========================= */
+document.addEventListener("DOMContentLoaded", () => {
+  // If there's a saved draft, show start panel giving choice to continue or start new
+  const hasDraft = !!localStorage.getItem(STORAGE_KEY);
+  const startPanel = document.getElementById('startPanel');
+  const screen = document.getElementById('screen');
+  function hideStart(showScreen = true){
+    startPanel.classList.add('hide');
+    startPanel.setAttribute('aria-hidden', 'true');
+    // remove any forced width we applied
+    startPanel.style.width = '';
+    if (showScreen) {
+      screen.classList.remove('hide');
+      render();
+    }
+  }
+  function positionStartPanel(){
+    if (!startPanel || !screen) return;
+    try{
+      const screenW = screen.getBoundingClientRect().width;
+      const maxW = Math.min(screenW, window.innerWidth * 0.96);
+      startPanel.style.width = `${Math.floor(maxW)}px`;
+    }catch(e){}
+  }
+  function startNew(){
+    localStorage.removeItem(STORAGE_KEY);
+    // reset in-memory state to fresh defaults
+    state.meta = { started_at: new Date().toISOString(), empleado: "", tipo_contacto: "calle" };
+    state.precheck = { app_ok: false, internet_ok: false, pitch_ready: false };
+    state.autoridad = { esta: null, nombre: "", cargo: "", tel: "" };
+    state.pitch = { dicho: false };
+    state.resultado = { tipo: "", seguimiento_fecha: "" };
+    state.consentimiento = { ok: null, opened: false };
+    state.form = { enviado: null };
+    state.interes = "medio";
+    state.local = { nombre: "", direccion: "", zona: "", zona_custom: "" };
+    state.notas = "";
+    state.submit = { last_status: "", last_ok: null };
+    currentStepIndex = 0;
+    hideStart(true);
+  }
+  function continueDraft(){
+    // keep loaded `state` from loadState(); decide starting step based on saved progress
+    const hasEmpleado = !!(state.meta && state.meta.empleado && state.meta.empleado.trim());
+    if (hasEmpleado) {
+      if (guardStopIfPrecheckFail()) currentStepIndex = 2;
+      else currentStepIndex = 0;
+    } else {
+      currentStepIndex = 0;
+    }
+    hideStart(true);
+  }
+
+  if (hasDraft){
+    startPanel.classList.remove('hide');
+    startPanel.setAttribute('aria-hidden', 'false');
+    // size the modal to match the main screen card and adjust on resize
+    positionStartPanel();
+    window.addEventListener('resize', positionStartPanel);
+    const btnNew = document.getElementById('btnStartNew');
+    const btnContinue = document.getElementById('btnStartContinue');
+    const startNoteEl = document.getElementById('startNote');
+    let newConfirm = false;
+    btnNew.addEventListener('click', ()=>{
+      if (!newConfirm){
+        // reveal warning note and require a second click to confirm
+        startNoteEl.classList.remove('hide');
+        btnNew.textContent = 'Confirmar: iniciar nuevo formulario';
+        btnNew.classList.add('danger');
+        newConfirm = true;
+      } else {
+        startNew();
+      }
+    });
+    btnContinue.addEventListener('click', continueDraft);
+  } else {
+    // No draft: normal boot
+    const hasEmpleado = !!(state.meta.empleado && state.meta.empleado.trim());
+    if (hasEmpleado) {
+      if (guardStopIfPrecheckFail()) currentStepIndex = 2;
+      else currentStepIndex = 0;
+    } else {
+      currentStepIndex = 0;
+    }
+    render();
+  }
+  // Bind guide controls
+  document.getElementById('btnGuide')?.addEventListener('click', ()=> showGuide(true));
+  document.getElementById('btnCloseGuide')?.addEventListener('click', ()=> showGuide(false));
+  document.getElementById('btnPrintGuide')?.addEventListener('click', printGuide);
+
+  // Delegated handler for dynamic 'Volver' button inside the questionnaire
+  document.body.addEventListener('click', (e)=>{
+    const t = e.target;
+    if (t && t.id === 'btnQuestionnaireBack'){
+      state.consentimiento.opened = false;
+      state.consentimiento.ok = null;
+      saveState();
+      render();
+    }
+  });
+  document.getElementById('loginForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const user = document.getElementById('username').value;
+    const pass = document.getElementById('password').value;
+    if(user === 'clicks' && pass === 'admin') {
+      localStorage.setItem('loggedIn', 'true');
+      document.getElementById('loginScreen').style.display = 'none';
+    } else {
+      alert('Credenciales incorrectas');
+    }
+  });
+});
+</script>
+</body>
+</html>

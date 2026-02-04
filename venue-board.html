@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Venues Board — Clicks Ops Hub</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="nav">
+  <div class="inner">
+    <div class="brand"><span class="dot"></span><span>Clicks Ops Hub</span></div>
+    <div class="links">
+      <a class="btn primary" href="index.html">Home</a>
+      <a class="btn coral" href="field-guide.html">Visitas</a>
+      <a class="btn yellow" href="post-visit.html">Post‑Visita</a>
+      <a class="btn neon active" href="venue-board.html">Venues</a>
+      <a class="btn cyan" href="excel-automator.html">Finanzas</a>
+      <a class="btn muted" href="files-vault.html">Archivos</a>
+    </div>
+  </div>
+</div>
+<div id="loginScreen" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; align-items:center; justify-content:center;">
+  <div style="background:#fff; padding:40px; border-radius:10px; box-shadow:0 0 20px rgba(0,0,0,0.5); max-width:400px; width:90%;">
+    <h2 style="text-align:center; margin-bottom:20px; color:#333;">Clicks Ops Hub - Login</h2>
+    <form id="loginForm">
+      <div style="margin-bottom:15px;">
+        <label for="username" style="display:block; margin-bottom:5px; color:#555;">Usuario:</label>
+        <input type="text" id="username" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:5px; font-size:16px;" required>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label for="password" style="display:block; margin-bottom:5px; color:#555;">Contraseña:</label>
+        <input type="password" id="password" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:5px; font-size:16px;" required>
+      </div>
+      <button type="submit" style="width:100%; padding:12px; background:#007bff; color:#fff; border:none; border-radius:5px; font-size:16px; cursor:pointer;">Iniciar Sesión</button>
+    </form>
+  </div>
+</div>
+<div class="wrap">
+  <div class="card col-12">
+    <h1>Venues Board — Clicks Ops Hub</h1>
+  </div>
+  <div style="height:12px"></div>
+  
+<div class="grid">
+  <div class="card col-12">
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+      <div class="title">Search</div>
+      <div style="min-width:260px; width:40%;">
+        <input id="venueSearch" placeholder="Search" style="width:100%; padding:8px 10px; border-radius:10px; border:1px solid rgba(31,33,38,.95); background:rgba(12,12,16,.6); color:var(--text)" />
+      </div>
+        <div style="min-width:180px; text-align:right;">
+          <button id="btnExportDb" class="btn muted" title="Exportar base de datos">Export DB</button>
+          <button id="btnRestoreDb" class="btn muted" title="Restaurar base de datos">Restore DB</button>
+        </div>
+    </div>
+    <div class="hr"></div>
+    <table>
+      <thead>
+        <tr>
+          <th>Local</th>
+          <th>Zona</th>
+          <th>Encargado</th>
+          <th>Telefono</th>
+          <th>Instagram</th>
+          <th>Visitado</th>
+          <th>Fecha</th>
+          <th>Nivel de Interes</th>
+          <th>Firmo</th>
+          <th>Notas</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="venuesTableBody">
+        <!-- Rows will be dynamically populated -->
+      </tbody>
+    </table>
+    <div class="hr"></div>
+
+  </div>
+</div>
+
+  <div style="height:16px"></div>
+  <div class="small">Clicks LLC · Ops Hub interno</div>
+</div>
+</body>
+</html>
+
+<script>
+  function login() {
+    document.getElementById('loginScreen').style.display = 'flex';
+  }
+  if(localStorage.getItem('loggedIn') !== 'true') {
+    login();
+  }
+  // helper to return active DB key names (supports versioning)
+  function getKey(type){
+    const v = localStorage.getItem('db_version') || '';
+    if(type === 'venues') return v === 'v2' ? 'venuesDatabase_v2' : 'venuesDatabase';
+    if(type === 'posts') return v === 'v2' ? 'postVisitsDatabase_v2' : 'postVisitsDatabase';
+    return type;
+  }
+
+  function formatDateIsoToDDMMYYYY(iso){
+    if(!iso) return '';
+    try{
+      const d = new Date(iso);
+      if(isNaN(d)) return '';
+      const dd = String(d.getDate()).padStart(2,'0');
+      const mm = String(d.getMonth()+1).padStart(2,'0');
+      const yyyy = d.getFullYear();
+      return `${dd}/${mm}/${yyyy}`;
+    }catch(e){ return ''; }
+  }
+
+  function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]; }); }
+
+  function showVenueDetails(localName){
+    // Load both v2 and legacy keys to be tolerant during transition
+    const venuesV2 = JSON.parse(localStorage.getItem('venuesDatabase_v2')) || [];
+    const venuesLegacy = JSON.parse(localStorage.getItem('venuesDatabase')) || [];
+    const venues = venuesV2.concat(venuesLegacy || []);
+    const postsV2 = JSON.parse(localStorage.getItem('postVisitsDatabase_v2')) || [];
+    const postsLegacy = JSON.parse(localStorage.getItem('postVisitsDatabase')) || [];
+    const posts = postsV2.concat(postsLegacy || []);
+    const venueEntries = venues.filter(v=> ((v.business_name||v.local||v.local_name||'').toString()) === localName);
+    const postEntries = posts.filter(p=> ((p.local||p.local_name||p.business_name||'').toString()) === localName);
+
+    const modal = document.createElement('div');
+    modal.style.position = 'fixed'; modal.style.inset = 0; modal.style.background = 'rgba(0,0,0,.6)'; modal.style.display='flex'; modal.style.alignItems='center'; modal.style.justifyContent='center'; modal.style.zIndex = 9999;
+    const content = document.createElement('div');
+    content.className = 'card'; content.style.maxWidth = '880px'; content.style.width = '92%'; content.style.maxHeight = '84%'; content.style.overflow = 'auto';
+
+    let html = `
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3>Detalles - ${escapeHtml(localName)}</h3>
+        <button class="btn ghost" id="closeDetails">Cerrar</button>
+      </div>
+      <div class="hr"></div>
+
+      <h4 style="color:var(--coral); margin:6px 0 8px 0;">Visita(s) registradas</h4>
+      <div id="visitsContainer" style="min-height:80px;"></div>
+
+      <div class="hr"></div>
+      <h4 style="color:var(--yellow); margin:6px 0 8px 0;">Post‑visita</h4>
+      <div id="postsContainer" style="min-height:80px;"></div>
+    `;
+    content.innerHTML = html;
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    document.getElementById('closeDetails')?.addEventListener('click', ()=>{ modal.remove(); });
+    modal.addEventListener('click', (e)=>{ if(e.target === modal) modal.remove(); });
+
+    // Populate visits
+    const visitsWrap = document.getElementById('visitsContainer');
+    if(visitsWrap){
+      if(!venueEntries || venueEntries.length === 0){
+        visitsWrap.innerHTML = '<div class="empty-section">(No hay visitas registradas)</div>';
+      } else {
+        visitsWrap.innerHTML = '';
+        venueEntries.forEach((entry, idx)=>{
+          const vdiv = document.createElement('div');
+          vdiv.className = 'visit-item';
+          vdiv.style.border = '1px solid rgba(0,0,0,.06)';
+          vdiv.style.padding = '8px';
+          vdiv.style.marginBottom = '8px';
+          vdiv.style.borderRadius = '8px';
+
+          // Resolve fields with fallbacks (reuse logic similar to loadVenuesData)
+          const empleado = entry.employee || entry.empleado || '';
+          const modalidadRaw = entry.contact_type || entry.tipo_contacto || entry.contacto_tipo || '';
+          let modalidad = '';
+          if(modalidadRaw){
+            const lc = modalidadRaw.toString().toLowerCase();
+            if(lc.includes('calle') || lc.includes('presencial')) modalidad = 'Presencial';
+            else if(lc.includes('telefono') || lc.includes('tel') || lc.includes('phone')) modalidad = 'Por telefono';
+            else modalidad = modalidadRaw;
+          } else { modalidad = '—'; }
+          const dateIso = entry.created_at || entry.started_at || '';
+          const fecha = dateIso ? formatDateIsoToDDMMYYYY(dateIso) : '';
+          let encargado = entry.manager_name || (entry.form && entry.form.manager_name) || entry.contacto_nombre || entry.autoridad_nombre || entry.empleado || '';
+          if(!encargado && entry._raw){
+            const raw = entry._raw;
+            const candidates = ['manager_name','contacto_nombre','contacto_name','autoridad_nombre','autoridad_name','manager','encargado','contacto'];
+            for(const k of Object.keys(raw || {})){
+              const lk = k.toString().toLowerCase();
+              if(candidates.some(c=> lk.includes(c)) && raw[k]){ encargado = raw[k]; break; }
+            }
+          }
+          const telefono = entry.phone || (entry.form && entry.form.phone) || entry.contacto_tel || entry.autoridad_tel || entry.tel || '';
+          const instagram = entry.instagram || (entry.form && entry.form.instagram) || entry.instagram_handle || '';
+
+          // build clickable links (no underline, inherit color) and add phone button
+          const telLink = telefono ? ('tel:' + telefono.replace(/[^+0-9]/g, '')) : '';
+          let instHref = '';
+          let cleanInst = '';
+          if(instagram){
+            const tmp = instagram.toString();
+            if(tmp.startsWith('http') || tmp.startsWith('https')) {
+              instHref = tmp;
+              // try extract last path segment as username
+              try{ cleanInst = tmp.split('/').filter(Boolean).pop() || tmp; }catch(e){ cleanInst = tmp; }
+            } else {
+              cleanInst = tmp.replace(/^@/, '').replace(/^\//, '');
+              instHref = 'https://instagram.com/' + encodeURIComponent(cleanInst);
+            }
+          }
+          const telefonoHtml = telefono ? `<a href="${telLink}" style="color:inherit; text-decoration:none">${escapeHtml(telefono)}</a> <button class="btn ghost" onclick="location.href='${telLink}'" title="Llamar">📞</button>` : '—';
+          const instagramHtml = instHref ? `<a href="${instHref}" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:none">@${escapeHtml(cleanInst)}</a>` : (instagram ? escapeHtml('@' + instagram.replace(/^@/, '')) : '—');
+
+          // condensed summary (no bullets)
+          vdiv.innerHTML = `
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+              <div style="flex:1">
+                <div style="margin-bottom:8px; line-height:1.4;">
+                  <div><strong>Empleado:</strong> ${escapeHtml(empleado || '—')}</div>
+                  <div><strong>Modalidad:</strong> ${escapeHtml(modalidad || '—')}</div>
+                  <div><strong>Fecha:</strong> ${escapeHtml(fecha || '—')}</div>
+                  <div><strong>Encargado:</strong> ${escapeHtml(encargado || '—')}</div>
+                  <div><strong>Telefono:</strong> ${telefonoHtml}</div>
+                  <div><strong>Instagram:</strong> ${instagramHtml}</div>
+                </div>
+              </div>
+              <div style="min-width:140px; text-align:right">
+                <button class="btn ghost" data-idx="${idx}" style="margin-bottom:6px;">Mostrar detalles</button>
+              </div>
+            </div>
+            <div class="visit-details" id="visit-details-${idx}" style="display:none; margin-top:8px; background:rgba(0,0,0,.02); padding:10px; border-radius:6px;">
+              <!-- detailed canonical fields (show only when present) -->
+              <div class="visit-canonical" style="line-height:1.5;">
+              </div>
+            </div>
+          `;
+
+          // After inserting the HTML, populate the canonical fields block with only the exact requested fields
+          const canonicalElId = 'visit-details-' + idx;
+          function pick(...keys){
+            // First, try direct in entry
+            for(const k of keys){
+              if(k.startsWith('_raw.')) continue;
+              const parts = k.split('.');
+              let cur = entry;
+              let found = true;
+              for(const p of parts){ if(cur && typeof cur === 'object' && (p in cur)) cur = cur[p]; else { found = false; break; } }
+              if(found && cur !== undefined && cur !== null && cur !== '') return cur;
+            }
+            // Then try in _raw
+            if(entry._raw){
+              for(const k of keys){
+                if(k.startsWith('_raw.')){
+                  const rk = k.slice(5);
+                  if(rk in entry._raw) return entry._raw[rk];
+                } else {
+                  // search in _raw by key name
+                  for(const rk of Object.keys(entry._raw)){
+                    if(rk.toLowerCase().includes(k.toLowerCase().split('.')[0])){
+                      return entry._raw[rk];
+                    }
+                  }
+                }
+              }
+            }
+            return undefined;
+          }
+
+          const block = document.getElementById(canonicalElId)?.querySelector('.visit-canonical');
+          if(block){
+            console.log('Block found, processing fields for idx', idx);
+            const parts = [];
+            const pushVal = (label, val, formatFn)=>{
+              if(val===undefined || val===null) return;
+              if(Array.isArray(val) && val.length===0) return;
+              let out = val;
+              if(formatFn) out = formatFn(val);
+              else if(typeof val === 'object') out = JSON.stringify(val);
+              if(String(out).trim() === '') return;
+              parts.push(`<div><strong>${label}:</strong> ${escapeHtml(String(out))}</div>`);
+            };
+
+            // list of requested fields and candidate keys to resolve with Spanish question labels
+            const requested = [
+              ['Nombre del encargado', ['manager_name','form.manager_name','_raw.manager_name','contacto_nombre','autoridad_nombre','empleado']],
+              ['Tipo de negocio', ['business_type','tipo_negocio','business_category']],
+              ['Los horarios del negocio son los que estan en Google', ['hours_google','hours.google','horas_google']],
+              ['lunes', ['hours.mon','hours_mon','horas.mon','horas_mon']],
+              ['martes', ['hours.tue','hours_tue','horas.tue','horas_tue']],
+              ['miercoles', ['hours.wed','hours_wed','horas.wed','horas_wed']],
+              ['jueves', ['hours.thu','hours_thu','horas.thu','horas_thu']],
+              ['viernes', ['hours.fri','hours_fri','horas.fri','horas_fri']],
+              ['sabado', ['hours.sat','hours_sat','horas.sat','horas_sat']],
+              ['domingo', ['hours.sun','hours_sun','horas.sun','horas_sun']],
+              ['Instagram', ['instagram','form.instagram','instagram_handle','_raw.instagram']],
+              ['Telefono', ['phone','form.phone','contacto_tel','tel','_raw.phone']],
+              ['Tienen menu online', ['menu_online','menu.online','_raw.menu_online']],
+              ['Metodo', ['menu_submission_method','menu.submission_method','_raw.menu_submission_method']],
+              ['Link del menu', ['menu_link','menu.link','_raw.menu_link']],
+              ['Archivo del menu', ['menu.files','menu_files','_raw.menu_files']],
+              ['Musica usual', ['music_types','music.types','_raw.music_types']],
+              ['Otro(musica)', ['music_other','music.other','_raw.music_other']],
+              ['Tienen musica en vivo', ['live_music','music.live','_raw.live_music']],
+              ['Tipo de musica', ['live_music_type','live_music.type','_raw.live_music_type']],
+              ['Dias de musica en vivo', ['live_music_days','live_music.days','_raw.live_music_days']],
+              ['Otros dias', ['live_music_days_other','live_music.days_other','_raw.live_music_days_other']],
+              ['Dias de mayor trafico', ['busy_days','busy.days','_raw.busy_days']],
+              ['Nivel de trafico', ['traffic_level','traffic','_raw.traffic_level']],
+              ['Tipo de clientes', ['clientele','_raw.clientele']],
+              ['Tienen promocion activa', ['promos_active','_raw.promos_active']],
+              ['Detalles de la promocion', ['promos_details','promos.details','_raw.promos_details']],
+              ['Cerveza (mas barata)', ['beer_cheapest_name','beer.cheapest.name','_raw.beer_cheapest_name']],
+              ['Precio Cerveza (mas barata)', ['beer_cheapest_price','beer.cheapest.price','_raw.beer_cheapest_price']],
+              ['Cerveza (mas cara)', ['beer_priciest_name','beer.priciest.name','_raw.beer_priciest_name']],
+              ['Precio Cerveza (mas cara)', ['beer_priciest_price','beer.priciest.price','_raw.beer_priciest_price']],
+              ['Trago (mas barato)', ['drink_cheapest_name','drink.cheapest.name','_raw.drink_cheapest_name']],
+              ['Precio Trago (mas barato)', ['drink_cheapest_price','drink.cheapest.price','_raw.drink_cheapest_price']],
+              ['Trago (mas caro)', ['drink_priciest_name','drink.priciest.name','_raw.drink_priciest_name']],
+              ['Precio Trago (mas caro)', ['drink_priciest_price','drink.priciest.price','_raw.drink_priciest_price']],
+              ['Sistema para cobrar', ['pos_system','pos.system','_raw.pos_system']],
+              ['Otro sistema', ['pos_other','pos.other','_raw.pos_other']],
+              ['Notas', ['notas','state.notas','notes','_notes','_raw.notas']]
+            ];
+
+            for(const [label, keys] of requested){
+              const val = pick(...keys);
+              console.log(`${label}: ${val}`);
+              if(label === 'Archivo del menu' && val){
+                // menu_files metadata
+                const files = Array.isArray(val) ? val : (val.files || val.file || []);
+                if(Array.isArray(files) && files.length){
+                  const meta = files.map(f=>{
+                    try{ return { name: f.name || f.filename || f.fileName || f.title || '', size: f.size || f.byteSize || null, type: f.type || f.mime || '' }; }catch(e){ return { name: String(f) }; }
+                  });
+                  pushVal(label, meta, (v)=> JSON.stringify(v));
+                }
+                continue;
+              }
+              if(Array.isArray(val)) pushVal(label, val.join(', '));
+              else pushVal(label, val);
+            }
+
+            console.log('Parts length:', parts.length, 'Parts:', parts);
+            block.innerHTML = parts.join('') || '<div>(No hay campos detallados disponibles)</div>';
+            console.log('Set innerHTML to:', block.innerHTML);
+          }
+
+          visitsWrap.appendChild(vdiv);
+
+          // wire toggle
+          vdiv.querySelectorAll('button[data-idx]')?.forEach(btn=>{
+            btn.addEventListener('click', ()=>{
+              const id = btn.getAttribute('data-idx');
+              const det = document.getElementById('visit-details-' + id);
+              if(!det) return;
+
+              // Process fields on demand
+              const block = det.querySelector('.visit-canonical');
+              if(block && block.innerHTML.trim() === ''){  // only if not already processed
+                const parts = [];
+                const pushVal = (label, val, formatFn)=>{
+                  if(val===undefined || val===null) return;
+                  if(Array.isArray(val) && val.length===0) return;
+                  let out = val;
+                  if(formatFn) out = formatFn(val);
+                  else if(typeof val === 'object') out = JSON.stringify(val);
+                  if(String(out).trim() === '') return;
+                  parts.push(`<tr><td style="padding:4px; border-bottom:1px solid #ccc;"><strong>${label}</strong></td><td style="padding:4px; border-bottom:1px solid #ccc;">${escapeHtml(String(out))}</td></tr>`);
+                };
+
+                const requested = [
+                  ['Nombre del encargado', ['manager_name','form.manager_name','_raw.manager_name','contacto_nombre','autoridad_nombre','empleado']],
+                  ['Tipo de negocio', ['business_type','tipo_negocio','business_category']],
+                  ['Los horarios del negocio son los que estan en Google', ['hours_google','hours.google','horas_google']],
+                  ['lunes', ['hours.mon','hours_mon','horas.mon','horas_mon']],
+                  ['martes', ['hours.tue','hours_tue','horas.tue','horas_tue']],
+                  ['miercoles', ['hours.wed','hours_wed','horas.wed','horas_wed']],
+                  ['jueves', ['hours.thu','hours_thu','horas.thu','horas_thu']],
+                  ['viernes', ['hours.fri','hours_fri','horas.fri','horas_fri']],
+                  ['sabado', ['hours.sat','hours_sat','horas.sat','horas_sat']],
+                  ['domingo', ['hours.sun','hours_sun','horas.sun','horas_sun']],
+                  ['Instagram', ['instagram','form.instagram','instagram_handle','_raw.instagram']],
+                  ['Telefono', ['phone','form.phone','contacto_tel','tel','_raw.phone']],
+                  ['Tienen menu online', ['menu_online','menu.online','_raw.menu_online']],
+                  ['Metodo', ['menu_submission_method','menu.submission_method','_raw.menu_submission_method']],
+                  ['Link del menu', ['menu_link','menu.link','_raw.menu_link']],
+                  ['Archivo del menu', ['menu.files','menu_files','_raw.menu_files']],
+                  ['Musica usual', ['music_types','music.types','_raw.music_types']],
+                  ['Otro(musica)', ['music_other','music.other','_raw.music_other']],
+                  ['Tienen musica en vivo', ['live_music','music.live','_raw.live_music']],
+                  ['Tipo de musica', ['live_music_type','live_music.type','_raw.live_music_type']],
+                  ['Dias de musica en vivo', ['live_music_days','live_music.days','_raw.live_music_days']],
+                  ['Otros dias', ['live_music_days_other','live_music.days_other','_raw.live_music_days_other']],
+                  ['Dias de mayor trafico', ['busy_days','busy.days','_raw.busy_days']],
+                  ['Nivel de trafico', ['traffic_level','traffic','_raw.traffic_level']],
+                  ['Tipo de clientes', ['clientele','_raw.clientele']],
+                  ['Tienen promocion activa', ['promos_active','_raw.promos_active']],
+                  ['Detalles de la promocion', ['promos_details','promos.details','_raw.promos_details']],
+                  ['Cerveza (mas barata)', ['beer_cheapest_name','beer.cheapest.name','_raw.beer_cheapest_name']],
+                  ['Precio Cerveza (mas barata)', ['beer_cheapest_price','beer.cheapest.price','_raw.beer_cheapest_price']],
+                  ['Cerveza (mas cara)', ['beer_priciest_name','beer.priciest.name','_raw.beer_priciest_name']],
+                  ['Precio Cerveza (mas cara)', ['beer_priciest_price','beer.priciest.price','_raw.beer_priciest_price']],
+                  ['Trago (mas barato)', ['drink_cheapest_name','drink.cheapest.name','_raw.drink_cheapest_name']],
+                  ['Precio Trago (mas barato)', ['drink_cheapest_price','drink.cheapest.price','_raw.drink_cheapest_price']],
+                  ['Trago (mas caro)', ['drink_priciest_name','drink.priciest.name','_raw.drink_priciest_name']],
+                  ['Precio Trago (mas caro)', ['drink_priciest_price','drink.priciest.price','_raw.drink_priciest_price']],
+                  ['Sistema para cobrar', ['pos_system','pos.system','_raw.pos_system']],
+                  ['Otro sistema', ['pos_other','pos.other','_raw.pos_other']],
+                  ['Notas', ['notas','state.notas','notes','_notes','_raw.notas']]
+                ];
+
+                for(const [label, keys] of requested){
+                  const val = pick(...keys);
+                  if(label === 'Archivo del menu' && val){
+                    // menu_files metadata
+                    const files = Array.isArray(val) ? val : (val.files || val.file || []);
+                    if(Array.isArray(files) && files.length){
+                      const meta = files.map(f=>{
+                        try{ return { name: f.name || f.filename || f.fileName || f.title || '', size: f.size || f.byteSize || null, type: f.type || f.mime || '' }; }catch(e){ return { name: String(f) }; }
+                      });
+                      pushVal(label, meta, (v)=> JSON.stringify(v));
+                    }
+                    continue;
+                  }
+                  if(Array.isArray(val)) pushVal(label, val.join(', '));
+                  else pushVal(label, val);
+                }
+
+                block.innerHTML = parts.length ? `<table style="width:100%; border-collapse:collapse;">${parts.join('')}</table>` : '<div>(No hay campos detallados disponibles)</div>';
+              }
+
+              if(det.style.display === 'none'){ det.style.display = ''; btn.textContent = 'Ocultar detalles'; }
+              else { det.style.display = 'none'; btn.textContent = 'Mostrar detalles'; }
+            });
+          });
+        });
+      }
+    }
+
+    // Populate post‑visita
+    const postsWrap = document.getElementById('postsContainer');
+    if(postsWrap){
+      if(!postEntries || postEntries.length === 0){
+        postsWrap.innerHTML = '<div class="empty-section">(No hay post‑visitas registradas)</div>';
+      } else {
+        postsWrap.innerHTML = '';
+        postEntries.forEach((p)=>{
+          const pdfHref = p.agreement_file_content ? `data:application/pdf;base64,${p.agreement_file_content}` : "data:application/pdf;base64,JVBERi0xLjQKMQowIG9iago8PAovVHlwZSAvQ2F0YWxvZwovUGFnZXMgMiAwIFIKPj4KZW5kb2JqCjIKMCBvYmoKPDwKL1R5cGUgL1BhZ2VzCi9LaWRzIFszIDAgUl0KL0NvdW50IDEKPj4KZW5kb2JqCjMKMCBvYmoKPDwKL1R5cGUgL1BhZ2UKL1BhcmVudCAyIDAgUgovTWVkaWFCb3ggWzAgMCA2MTIgNzkyXQovQ29udGVudHMgNCAwIFIKPj4KZW5kb2JqCjQKMCBvYmoKPDwKL0xlbmd0aCAwCj4+CnN0cmVhbQoKZW5kc3RyZWFtCmVuZG9iagp4cmVmCjAgNQowMDAwMDAwMDAwIDY1NTM1IGYgCjAwMDAwMDAwMTAgMDAwMDAgbiAKMDAwMDAwMDA1MyAwMDAwMCBuIAowMDAwMDAwMTAwIDAwMDAwIG4gCjAwMDAwMDAxNzkgMDAwMDAgbiAKdHJhaWxlcgo8PAovU2l6ZSA1Ci9Sb290IDEgMCBSCj4+CnN0YXJ0eHJlZgoKODE4CmUlRU9GCg==";
+          const pdfName = p.agreement_file_name || `${localName}.pdf`;
+          const pd = document.createElement('div'); pd.style.marginBottom='8px'; pd.innerHTML = `
+            <div><strong>Fecha:</strong> ${escapeHtml(formatDateIsoToDDMMYYYY(p.created_at) || '—')}</div>
+            <div><strong>Nivel de interés:</strong> ${escapeHtml(p.interest_level || p.interes || '—')}</div>
+            <div><strong>Firmó:</strong> ${p.agreement_signed ? 'Sí' : 'No'}</div>
+            ${p.agreement_signed ? `<div><strong>Tipo de acuerdo:</strong> ${escapeHtml(p.agreement_type || '—')}</div>` : ''}
+            ${p.agreement_signed ? `<div><strong>Documento firmado:</strong> <a href="${pdfHref}" download="${escapeHtml(pdfName)}" style="color:inherit; text-decoration:none;">${escapeHtml(pdfName)}</a></div>` : ''}
+          `;
+          postsWrap.appendChild(pd);
+        });
+      }
+    }
+  }
+
+  function deleteVenue(localName) {
+    if(!confirm(`¿Eliminar el negocio "${localName}", su visita y post-visita?`)) return;
+    const venues = JSON.parse(localStorage.getItem(getKey('venues'))) || [];
+    const posts = JSON.parse(localStorage.getItem(getKey('posts'))) || [];
+    const newVenues = venues.filter(v => (v.local || v.local_name || v.business_name || '').toString() !== localName);
+    const newPosts = posts.filter(p => (p.business_name || p.local || p.local_name || '').toString() !== localName);
+    localStorage.setItem(getKey('venues'), JSON.stringify(newVenues));
+    localStorage.setItem(getKey('posts'), JSON.stringify(newPosts));
+    loadVenuesData();
+  }
+
+  function exportDb() {
+    const data = {
+      venues: JSON.parse(localStorage.getItem(getKey('venues'))) || [],
+      posts: JSON.parse(localStorage.getItem(getKey('posts'))) || [],
+      version: localStorage.getItem('db_version') || 'v2'
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `clicks_db_backup_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function restoreDb() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (data.venues && data.posts) {
+            localStorage.setItem(getKey('venues'), JSON.stringify(data.venues));
+            localStorage.setItem(getKey('posts'), JSON.stringify(data.posts));
+            if (data.version) localStorage.setItem('db_version', data.version);
+            alert('Base de datos restaurada exitosamente.');
+            loadVenuesData();
+          } else {
+            alert('Archivo inválido. Debe contener venues y posts.');
+          }
+        } catch (err) {
+          alert('Error al leer el archivo: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  }
+
+  function loadVenuesData() {
+    const venues = JSON.parse(localStorage.getItem(getKey('venues'))) || [];
+    const posts = JSON.parse(localStorage.getItem(getKey('posts'))) || [];
+    const tableBody = document.getElementById('venuesTableBody');
+
+    const q = (document.getElementById('venueSearch')?.value || '').toLowerCase().trim();
+
+    tableBody.innerHTML = '';
+    // iterate venues and build rows
+    venues.forEach((entry) => {
+      const localName = (entry.local || entry.local_name || entry.business_name || '').toString();
+      const nivelPreview = (posts.find(p=> ((p.local||p.local_name||p.business_name||'') === localName))?.interes) || entry.interes || '';
+      const contacto = entry.manager_name || (entry.form && entry.form.manager_name) || entry.contacto_nombre || entry.autoridad_nombre || entry.empleado || '';
+      const phonePreview = entry.phone || (entry.form && entry.form.phone) || entry.contacto_tel || entry.autoridad_tel || entry.tel || '';
+      const instagramPreview = entry.instagram || (entry.form && entry.form.instagram) || entry.instagram_handle || '';
+      const hay = (localName + ' ' + (entry.zona||entry.local_zona||entry.business_zone||'') + ' ' + (nivelPreview||'') + ' ' + contacto + ' ' + phonePreview + ' ' + instagramPreview).toLowerCase();
+      if(q && !hay.includes(q)) return;
+      // find latest post for this local (match against multiple possible keys)
+      const relatedPosts = posts.filter(p=> ((p.business_name||p.local||p.local_name||'') === localName));
+      const latestPost = relatedPosts.length ? relatedPosts[relatedPosts.length-1] : null;
+      // determine date: prefer post created_at, else venue started_at
+      const dateIso = (latestPost && latestPost.created_at) || entry.created_at || entry.started_at || '';
+      const dateText = dateIso ? formatDateIsoToDDMMYYYY(dateIso) : '';
+      const nivel = (latestPost && (latestPost.interest_level || latestPost.interes)) || entry.interes || '—';
+      const firmo = (latestPost ? (latestPost.agreement_signed || latestPost.firmo) : (entry.consentimiento || false));
+      // Resolve manager_name with multiple fallbacks, including scanning _raw for likely fields
+      let encargado = entry.manager_name || (entry.form && entry.form.manager_name) || entry.contacto_nombre || entry.autoridad_nombre || entry.empleado || '';
+      if(!encargado && entry._raw){
+        const raw = entry._raw;
+        const candidates = ['manager_name','contacto_nombre','contacto_name','autoridad_nombre','autoridad_name','manager','encargado','contacto'];
+        for(const k of Object.keys(raw || {})){
+          const lk = k.toString().toLowerCase();
+          if(candidates.some(c=> lk.includes(c)) && raw[k]){ encargado = raw[k]; break; }
+        }
+      }
+      const telefono = entry.phone || (entry.form && entry.form.phone) || entry.contacto_tel || entry.autoridad_tel || entry.tel || '';
+      const instagram = entry.instagram || (entry.form && entry.form.instagram) || entry.instagram_handle || '';
+      // Visitado: based on contact_type (Presencial -> Sí, Por telefono -> No)
+      const ct = entry.contact_type || entry.tipo_contacto || '';
+      const visitado = (ct.toString().toLowerCase() === 'calle' || ct.toString().toLowerCase() === 'presencial') ? 'Sí' : 'No';
+
+      const row = document.createElement('tr');
+      row.style.cursor = 'pointer';
+      row.innerHTML = `
+        <td>${escapeHtml(localName) || 'N/A'}</td>
+        <td>${escapeHtml(entry.business_zone || entry.zona || entry.local_zona || 'N/A')}</td>
+        <td>${escapeHtml(encargado || '—')}</td>
+        <td>${escapeHtml(telefono || '—')}</td>
+        <td>${escapeHtml(instagram || '—')}</td>
+        <td>${escapeHtml(visitado)}</td>
+        <td>${escapeHtml(dateText)}</td>
+        <td>${escapeHtml(nivel)}</td>
+        <td>${firmo ? 'Sí' : 'No'}</td>
+        <td>${escapeHtml(entry.notas || entry.notes || entry._notes || '—')}</td>
+        <td><button onclick="deleteVenue('${localName.replace(/'/g, "\\'")}')" class="btn ghost" title="Eliminar negocio">🗑️</button></td>
+      `;
+      row.addEventListener('click', ()=>{ showVenueDetails(localName); });
+      tableBody.appendChild(row);
+    });
+  }
+
+  // Load data on page load and wire search
+  document.addEventListener('DOMContentLoaded', ()=>{
+    // Load venues using the active DB (no automatic reset to avoid erasing recent submissions)
+    loadVenuesData();
+    const s = document.getElementById('venueSearch'); if(s) s.addEventListener('input', loadVenuesData);
+    const btnExport = document.getElementById('btnExportDb');
+    if(btnExport) btnExport.addEventListener('click', exportDb);
+    const btnRestore = document.getElementById('btnRestoreDb');
+    if(btnRestore) btnRestore.addEventListener('click', restoreDb);
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const user = document.getElementById('username').value;
+      const pass = document.getElementById('password').value;
+      if(user === 'clicks' && pass === 'admin') {
+        localStorage.setItem('loggedIn', 'true');
+        document.getElementById('loginScreen').style.display = 'none';
+      } else {
+        alert('Credenciales incorrectas');
+      }
+    });
+  });
+</script>

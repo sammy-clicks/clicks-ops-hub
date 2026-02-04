@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Post‑Visita — Clicks Ops Hub</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="nav">
+  <div class="inner">
+    <div class="brand"><span class="dot"></span><span>Clicks Ops Hub</span></div>
+    <div class="links">
+      <a class="btn primary" href="index.html">Home</a>
+      <a class="btn coral" href="field-guide.html">Visitas</a>
+      <a class="btn yellow active" href="post-visit.html">Post‑Visita</a>
+      <a class="btn neon" href="venue-board.html">Venues</a>
+      <a class="btn cyan" href="excel-automator.html">Finanzas</a>
+      <a class="btn muted" href="files-vault.html">Archivos</a>
+    </div>
+  </div>
+</div>
+<div id="loginScreen" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:10000; align-items:center; justify-content:center;">
+  <div style="background:#fff; padding:40px; border-radius:10px; box-shadow:0 0 20px rgba(0,0,0,0.5); max-width:400px; width:90%;">
+    <h2 style="text-align:center; margin-bottom:20px; color:#333;">Clicks Ops Hub - Login</h2>
+    <form id="loginForm">
+      <div style="margin-bottom:15px;">
+        <label for="username" style="display:block; margin-bottom:5px; color:#555;">Usuario:</label>
+        <input type="text" id="username" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:5px; font-size:16px;" required>
+      </div>
+      <div style="margin-bottom:20px;">
+        <label for="password" style="display:block; margin-bottom:5px; color:#555;">Contraseña:</label>
+        <input type="password" id="password" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:5px; font-size:16px;" required>
+      </div>
+      <button type="submit" style="width:100%; padding:12px; background:#007bff; color:#fff; border:none; border-radius:5px; font-size:16px; cursor:pointer;">Iniciar Sesión</button>
+    </form>
+  </div>
+</div>
+  <div class="wrap">
+    <div class="sticky">
+      <div class="stepbar" id="stepbar"></div>
+    </div>
+
+    <div class="card" id="screen">
+      <div class="pill">Formulario de post‑visita</div>
+      <div id="screenBody"></div>
+    </div>
+
+    <div class="card start-panel" id="startPanel" aria-hidden="false" style="text-align:center;">
+      <div class="title">¿Qué deseas hacer?</div>
+      <div class="hr"></div>
+      <div id="startNote" class="mini">Si inicias un nuevo formulario perderás el anterior si no lo enviaste.</div>
+      <div class="btns" style="display:flex; gap:12px; justify-content:center; align-items:center; margin-top:12px;">
+        <button class="btn yellow start-new" id="btnStartNew" type="button">Nuevo formulario</button>
+      </div>
+    </div>
+
+    <div style="height:16px"></div>
+    <div class="small">Clicks LLC · Ops Hub interno</div>
+  </div>
+  
+  <script>
+  function login() {
+    document.getElementById('loginScreen').style.display = 'flex';
+  }
+  if(localStorage.getItem('loggedIn') !== 'true') {
+    login();
+  }
+  // Post‑visit form behavior
+  function getKey(type){
+    const v = localStorage.getItem('db_version') || '';
+    if(type === 'venues') return v === 'v2' ? 'venuesDatabase_v2' : 'venuesDatabase';
+    if(type === 'posts') return v === 'v2' ? 'postVisitsDatabase_v2' : 'postVisitsDatabase';
+    return type;
+  }
+  function loadVenuesOptions() {
+    const data = JSON.parse(localStorage.getItem(getKey('venues'))) || [];
+    const posts = JSON.parse(localStorage.getItem(getKey('posts'))) || [];
+    const postLocals = new Set(posts.map(p => (p.business_name || p.local || p.local_name || '').toString()).filter(Boolean));
+    // extract unique local names excluding those that already have a post-visit
+    const allNames = Array.from(new Set(data.map(d => (d && (d.business_name || d.local || d.local_name)) || '').filter(Boolean)));
+    const names = allNames.filter(n => !postLocals.has(n));
+    return names;
+  }
+
+  function renderNewForm(prefill) {
+    const screenBody = document.getElementById('screenBody');
+    if(!screenBody) return;
+    const names = loadVenuesOptions();
+    const optionsHtml = names.length ? names.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('') : '<option value="">(No hay negocios en la base)</option>';
+
+    screenBody.innerHTML = `
+      <div class="card col-6" style="margin:12px auto; max-width:720px;">
+        <div class="title">Formulario de post‑visita</div>
+        <div class="field">
+          <label>Nombre del negocio</label>
+          <select id="post_local">${optionsHtml}</select>
+        </div>
+        <div class="field">
+          <label>Nivel de interés</label>
+          <select id="post_interest"><option>bajo</option><option>medio</option><option>alto</option></select>
+        </div>
+        <div class="field">
+          <label>¿Firmó acuerdo?</label>
+          <select id="post_firmo"><option>No</option><option>Si</option></select>
+        </div>
+        <div class="field hide" id="tipoAcuerdoWrap">
+          <label>Tipo de acuerdo</label>
+          <select id="post_tipo_acuerdo"><option>Free</option><option>Pro</option></select>
+        </div>
+        <div class="field" id="uploadWrap" style="display:none;">
+          <label>Subir documento (opcional)</label>
+          <input type="file" id="post_file" />
+        </div>
+        <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end;">
+          <button class="btn ghost" id="btnCancelPost">Cancelar</button>
+          <button class="btn yellow" id="btnSavePost">Someter</button>
+        </div>
+      </div>
+    `;
+
+    // wire events
+    document.getElementById('post_firmo')?.addEventListener('change', (e)=>{
+      const v = e.target.value;
+      const tipoWrap = document.getElementById('tipoAcuerdoWrap');
+      const upload = document.getElementById('uploadWrap');
+      if(v === 'Si') { tipoWrap.classList.remove('hide'); } else { tipoWrap.classList.add('hide'); }
+      if(upload) upload.style.display = 'block';
+    });
+
+    document.getElementById('btnCancelPost')?.addEventListener('click', ()=>{
+      // return to start panel
+      document.getElementById('screenBody').innerHTML = '';
+      const sp = document.getElementById('startPanel'); if(sp) sp.style.display = '';
+    });
+
+    document.getElementById('btnSavePost')?.addEventListener('click', ()=>{
+      const local = document.getElementById('post_local')?.value || '';
+      if(!local) { alert('Selecciona un negocio válido de la lista.'); return; }
+      const interes = document.getElementById('post_interest')?.value || '';
+      const firmo = document.getElementById('post_firmo')?.value === 'Si';
+      const tipo = document.getElementById('post_tipo_acuerdo')?.value || '';
+      const fileEl = document.getElementById('post_file');
+      const file = (fileEl && fileEl.files && fileEl.files[0]) ? fileEl.files[0] : null;
+
+      const dbKey = getKey('posts');
+      const existing = JSON.parse(localStorage.getItem(dbKey)) || [];
+
+      if(file){
+        const reader = new FileReader();
+        reader.onload = function(e){
+          const base64 = e.target.result.split(',')[1]; // quitar data:application/pdf;base64,
+          const v = {
+            business_name: local,
+            interest_level: interes,
+            agreement_signed: firmo,
+            agreement_type: tipo || '',
+            agreement_file_name: file.name,
+            agreement_file_content: base64,
+            created_at: new Date().toISOString(),
+            _raw: { local, interes, firmo, tipo, fileName: file.name }
+          };
+          existing.push(v);
+          localStorage.setItem(dbKey, JSON.stringify(existing));
+          alert('Post‑visita guardada.');
+          // reset to start
+          document.getElementById('screenBody').innerHTML = '';
+          const sp = document.getElementById('startPanel'); if(sp) sp.style.display = '';
+        };
+        reader.readAsDataURL(file);
+      } else {
+        const v = {
+          business_name: local,
+          interest_level: interes,
+          agreement_signed: firmo,
+          agreement_type: tipo || '',
+          agreement_file_name: '',
+          agreement_file_content: '',
+          created_at: new Date().toISOString(),
+          _raw: { local, interes, firmo, tipo, fileName: '' }
+        };
+        existing.push(v);
+        localStorage.setItem(dbKey, JSON.stringify(existing));
+        alert('Post‑visita guardada.');
+        // reset to start
+        document.getElementById('screenBody').innerHTML = '';
+        const sp = document.getElementById('startPanel'); if(sp) sp.style.display = '';
+      }
+    });
+
+    // prefill if requested
+    if(prefill){
+      const sel = document.getElementById('post_local'); if(sel) sel.value = prefill.local || '';
+      const it = document.getElementById('post_interest'); if(it) it.value = prefill.interes || 'medio';
+      const pf = document.getElementById('post_firmo'); if(pf) pf.value = prefill.firmo ? 'Si' : 'No';
+      if(prefill.firmo) { document.getElementById('tipoAcuerdoWrap')?.classList.remove('hide'); document.getElementById('uploadWrap').style.display = 'block'; }
+    }
+  }
+
+  function setupStartPanel(){
+    document.getElementById('btnStartNew')?.addEventListener('click', ()=>{
+      const available = loadVenuesOptions();
+      if(!available || available.length === 0){
+        alert('Todos los negocios visitados ya tienen post‑visita.');
+        return;
+      }
+      const sp = document.getElementById('startPanel'); if(sp) sp.style.display = 'none';
+      renderNewForm();
+    });
+
+    // btnStartContinue removed from UI; keep handler safeguarded if ever restored
+    document.getElementById('btnStartContinue')?.addEventListener('click', ()=>{
+      const dbKey = getKey('posts');
+      const existing = JSON.parse(localStorage.getItem(dbKey)) || [];
+      if(existing.length === 0){ alert('No hay post‑visitas guardadas para continuar.'); return; }
+      const last = existing[existing.length -1];
+      const sp = document.getElementById('startPanel'); if(sp) sp.style.display = 'none';
+      renderNewForm(last);
+    });
+  }
+
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]; }); }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    setupStartPanel();
+    document.getElementById('loginForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const user = document.getElementById('username').value;
+      const pass = document.getElementById('password').value;
+      if(user === 'clicks' && pass === 'admin') {
+        localStorage.setItem('loggedIn', 'true');
+        document.getElementById('loginScreen').style.display = 'none';
+      } else {
+        alert('Credenciales incorrectas');
+      }
+    });
+  });
+  </script>
+</body>
+</html>

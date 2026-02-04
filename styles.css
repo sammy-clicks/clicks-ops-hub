@@ -1,0 +1,360 @@
+/* Clicks Ops Hub — style.css (inspired by Clicks UI)
+   Goal: same brand feel (dark + coral/neon/yellow), simpler components for ops dashboard.
+*/
+
+:root{
+  --coral:#FF5A5F;
+  --neon:#9F4BF2;
+  --yellow:#FFD75E;
+  --black:#0C0C10;
+  --gray:#9CA3AF;
+  --line:#1f2126;
+  --panel: rgba(20,20,28,.78);
+  --panel2: rgba(14,14,20,.72);
+  --text:#ffffff;
+  --muted:#cbd5e1;
+  --shadow: 0 14px 42px rgba(0,0,0,.45);
+  --radius: 18px;
+}
+
+/* RESET */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{
+  height:100%;
+  font-family:Inter,system-ui,Segoe UI,Helvetica,Arial,sans-serif;
+  background:var(--black);
+  color:var(--text);
+}
+
+/* LAYOUT */
+.wrap{max-width:980px;margin:0 auto;padding:16px}
+.grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+.col-12{grid-column:span 12}
+.col-6{grid-column:span 6}
+.col-4{grid-column:span 4}
+@media (max-width: 820px){
+  .col-6,.col-4{grid-column:span 12}
+}
+
+/* NAV */
+.nav{
+  position:sticky; top:0; z-index:20;
+  background: linear-gradient(to bottom, rgba(12,12,16,.92), rgba(12,12,16,.70));
+  border-bottom:1px solid rgba(31,33,38,.85);
+  backdrop-filter: blur(12px);
+}
+.nav .inner{
+  max-width:980px;margin:0 auto;padding:12px 16px;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+}
+.brand{display:flex;align-items:center;gap:10px;font-weight:900;letter-spacing:.2px}
+.brand .dot{
+  width:10px;height:10px;border-radius:999px;
+  background: linear-gradient(135deg,var(--coral),var(--neon));
+  box-shadow: 0 0 0 4px rgba(159,75,242,.16);
+}
+.links{display:flex;gap:8px;flex-wrap:wrap}
+
+/* TYPOGRAPHY */
+h1{font-size:16px;margin:0 0 6px;font-weight:900}
+p{margin:0;color:var(--muted);line-height:1.35}
+.title{font-size:14px;font-weight:950;margin:0 0 10px}
+.small{font-size:12px;color:var(--gray)}
+.hr{height:1px;background:rgba(31,33,38,.95);margin:12px 0}
+
+/* CARDS */
+.card{
+  background: linear-gradient(180deg, var(--panel), var(--panel2));
+  border:1px solid rgba(31,33,38,.95);
+  border-radius: var(--radius);
+  padding:14px;
+  box-shadow: var(--shadow);
+}
+.card:hover{
+  border-color: rgba(159,75,242,.35);
+}
+
+/* KPI PILL */
+.kpi{display:flex;gap:10px;flex-wrap:wrap}
+.kpi .pill{
+  border:1px solid rgba(31,33,38,.95);
+  border-radius:999px;
+  padding:8px 10px;
+  color:var(--muted);
+  font-size:12px;
+  background: rgba(12,12,16,.55);
+}
+
+/* BUTTONS (links) */
+a.btn{
+  text-decoration:none;
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius: 14px;
+  padding: 10px 12px;
+  font-weight: 900;
+  letter-spacing:.2px;
+  background: rgba(23,24,28,.65);
+  border: 1px solid rgba(31,33,38,.95);
+  color: var(--text);
+  transition: transform .08s ease, border-color .12s ease, filter .12s ease;
+}
+a.btn:hover{border-color: rgba(255,90,95,.35); filter: brightness(1.04)}
+a.btn:active{transform: translateY(1px)}
+
+a.btn.primary{
+  background: linear-gradient(135deg,var(--coral),var(--neon));
+  border-color: transparent;
+  color:#fff;
+  box-shadow: 0 10px 24px rgba(159,75,242,.18);
+}
+a.btn.primary:hover{filter: brightness(1.06)}
+a.btn.primary:active{transform: translateY(1px)}
+
+a.btn:focus{outline: 2px solid rgba(159,75,242,.35); outline-offset: 2px}
+
+/* Button color variants - unique color per button */
+/* Use classes like: <a class="btn coral">, <a class="btn neon">, <a class="btn yellow"> */
+a.btn.coral{
+  background: linear-gradient(135deg,var(--coral), #FF7A7D);
+  border-color: transparent;
+  color:#fff;
+  box-shadow: 0 8px 20px rgba(255,90,95,.12);
+}
+a.btn.coral:hover{filter: brightness(1.06)}
+a.btn.coral:active{transform: translateY(1px)}
+
+a.btn.neon{
+  background: linear-gradient(135deg,var(--neon), #6B3AF2);
+  border-color: transparent;
+  color:#fff;
+  box-shadow: 0 8px 20px rgba(159,75,242,.12);
+}
+a.btn.neon:hover{filter: brightness(1.06)}
+a.btn.neon:active{transform: translateY(1px)}
+
+a.btn.yellow{
+  background: linear-gradient(135deg,var(--yellow), #FFEA8A);
+  border-color: transparent;
+  color:#0C0C10;
+  box-shadow: 0 8px 20px rgba(255,215,94,.08);
+}
+a.btn.yellow:hover{filter: brightness(1.02)}
+a.btn.yellow:active{transform: translateY(1px)}
+
+/* low-contrast / secondary variants */
+a.btn.muted{
+  background: rgba(23,24,28,.65);
+  border-color: rgba(31,33,38,.95);
+  color:var(--muted);
+  box-shadow: none;
+}
+a.btn.muted:hover{filter: brightness(1.02)}
+
+a.btn.ghost{
+  background: transparent;
+  border-color: rgba(255,255,255,.06);
+  color:var(--muted);
+  box-shadow:none;
+}
+a.btn.ghost:hover{background: rgba(255,255,255,.02);}
+
+/* Active (selected) state for nav buttons */
+a.btn.active{transform: translateY(-2px);}
+
+/* stronger, color-tinted shadows for active variants */
+a.btn.primary.active{box-shadow: 0 12px 32px rgba(159,75,242,.18); border-color: transparent}
+a.btn.coral.active{box-shadow: 0 12px 32px rgba(255,90,95,.18); border-color: transparent}
+a.btn.neon.active{box-shadow: 0 12px 32px rgba(159,75,242,.18); border-color: transparent}
+a.btn.yellow.active{box-shadow: 0 12px 32px rgba(255,215,94,.14); border-color: transparent}
+a.btn.muted.active{box-shadow: 0 10px 24px rgba(0,0,0,.18); border-color: rgba(255,255,255,.06)}
+
+/* new cyan variant */
+a.btn.cyan{
+  background: linear-gradient(135deg,#33d1ff, #67f0ff);
+  border-color: transparent;
+  color:#041826;
+  box-shadow: 0 8px 20px rgba(51,209,255,.08);
+}
+a.btn.cyan:hover{filter: brightness(1.03)}
+a.btn.cyan:active{transform: translateY(1px)}
+a.btn.cyan.active{box-shadow: 0 12px 32px rgba(51,209,255,.14); border-color: transparent}
+
+/* Make styles apply to any element with .btn (buttons, inputs, anchors) */
+.btn{
+  text-decoration:none;
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius: 14px;
+  padding: 10px 12px;
+  font-weight: 900;
+  letter-spacing:.2px;
+  background: rgba(23,24,28,.65);
+  border: 1px solid rgba(31,33,38,.95);
+  color: var(--text);
+  transition: transform .08s ease, border-color .12s ease, filter .12s ease;
+  cursor: pointer;
+}
+.btn:hover{border-color: rgba(255,90,95,.35); filter: brightness(1.04)}
+.btn:active{transform: translateY(1px)}
+
+.btn.primary{
+  background: linear-gradient(135deg,var(--coral),var(--neon));
+  border-color: transparent;
+  color:#fff;
+  box-shadow: 0 10px 24px rgba(159,75,242,.18);
+}
+.btn.primary:hover{filter: brightness(1.06)}
+.btn.primary:active{transform: translateY(1px)}
+
+.btn:focus{outline: 2px solid rgba(159,75,242,.35); outline-offset: 2px}
+
+/* Generic variants matching a.btn.* so buttons inherit same colors */
+.btn.coral{background: linear-gradient(135deg,var(--coral), #FF7A7D); border-color: transparent; color:#fff; box-shadow: 0 8px 20px rgba(255,90,95,.12);} 
+.btn.coral:hover{filter: brightness(1.06)}
+.btn.coral:active{transform: translateY(1px)}
+
+.btn.neon{background: linear-gradient(135deg,var(--neon), #6B3AF2); border-color: transparent; color:#fff; box-shadow: 0 8px 20px rgba(159,75,242,.12);} 
+.btn.neon:hover{filter: brightness(1.06)}
+.btn.neon:active{transform: translateY(1px)}
+
+.btn.yellow{background: linear-gradient(135deg,var(--yellow), #FFEA8A); border-color: transparent; color:#0C0C10; box-shadow: 0 8px 20px rgba(255,215,94,.08);} 
+.btn.yellow:hover{filter: brightness(1.02)}
+.btn.yellow:active{transform: translateY(1px)}
+
+.btn.muted{background: rgba(23,24,28,.65); border-color: rgba(31,33,38,.95); color:var(--muted); box-shadow: none;} 
+.btn.muted:hover{filter: brightness(1.02)}
+
+.btn.ghost{background: transparent; border-color: rgba(255,255,255,.06); color:var(--muted); box-shadow:none;} 
+.btn.ghost:hover{background: rgba(255,255,255,.02);} 
+
+.btn.cyan{background: linear-gradient(135deg,#33d1ff, #67f0ff); border-color: transparent; color:#041826; box-shadow: 0 8px 20px rgba(51,209,255,.08);} 
+.btn.cyan:hover{filter: brightness(1.03)}
+.btn.cyan:active{transform: translateY(1px)}
+.btn.cyan.active{box-shadow: 0 12px 32px rgba(51,209,255,.14); border-color: transparent}
+
+.btn.active{transform: translateY(-2px);}
+.btn.primary.active{box-shadow: 0 12px 32px rgba(159,75,242,.18); border-color: transparent}
+.btn.coral.active{box-shadow: 0 12px 32px rgba(255,90,95,.18); border-color: transparent}
+.btn.neon.active{box-shadow: 0 12px 32px rgba(159,75,242,.18); border-color: transparent}
+.btn.yellow.active{box-shadow: 0 12px 32px rgba(255,215,94,.14); border-color: transparent}
+.btn.muted.active{box-shadow: 0 10px 24px rgba(0,0,0,.18); border-color: rgba(255,255,255,.06)}
+
+/* Prevent nav buttons from shifting when pressed (click/active) */
+.nav .links .btn:active,
+.nav .inner .links .btn:active {
+  transform: none !important;
+}
+
+/* Ensure nav buttons align center and don't change layout space */
+.nav .inner { align-items: center; }
+.nav .links { display:flex; gap:8px; align-items:center; }
+
+/* NAV: keep header buttons low-contrast until selected (.active) */
+.nav .links .btn{
+  background: transparent !important;
+  border-color: rgba(255,255,255,.06) !important;
+  color: var(--muted) !important;
+  box-shadow: none !important;
+}
+.nav .links .btn:hover{
+  background: rgba(255,255,255,.02) !important;
+  color: var(--text) !important;
+}
+
+/* When a nav button is active, reveal its color variant */
+.nav .links .btn.primary.active{background: linear-gradient(135deg,var(--coral),var(--neon)) !important; color:#fff !important; border-color: transparent !important; box-shadow: 0 12px 32px rgba(159,75,242,.18) !important}
+.nav .links .btn.coral.active{background: linear-gradient(135deg,var(--coral), #FF7A7D) !important; color:#fff !important; border-color: transparent !important; box-shadow: 0 12px 32px rgba(255,90,95,.18) !important}
+.nav .links .btn.neon.active{background: linear-gradient(135deg,var(--neon), #6B3AF2) !important; color:#fff !important; border-color: transparent !important; box-shadow: 0 12px 32px rgba(159,75,242,.18) !important}
+.nav .links .btn.yellow.active{background: linear-gradient(135deg,var(--yellow), #FFEA8A) !important; color:#0C0C10 !important; border-color: transparent !important; box-shadow: 0 12px 32px rgba(255,215,94,.14) !important}
+.nav .links .btn.cyan.active{background: linear-gradient(135deg,#33d1ff, #67f0ff) !important; color:#041826 !important; border-color: transparent !important; box-shadow: 0 12px 32px rgba(51,209,255,.14) !important}
+.nav .links .btn.muted.active{background: rgba(23,24,28,.72) !important; color:var(--muted) !important; border-color: rgba(255,255,255,.06) !important; box-shadow: 0 10px 24px rgba(0,0,0,.18) !important}
+
+/* ensure nav .links keeps consistent spacing */
+.nav .inner{align-items:center}
+
+/* FORMS */
+input,select,textarea{
+  width:100%;
+  background: rgba(12,12,16,.65);
+  border: 1px solid rgba(31,33,38,.95);
+  color: var(--text);
+  border-radius: 14px;
+  padding: 10px 12px;
+  outline:none;
+}
+textarea{min-height:110px;resize:vertical}
+input::placeholder, textarea::placeholder{color: rgba(156,163,175,.85)}
+input:focus,select:focus,textarea:focus{
+  border-color: rgba(255,90,95,.35);
+  box-shadow: 0 0 0 4px rgba(159,75,242,.12);
+}
+
+/* Custom styled checkboxes for better visibility and alignment
+   Targets labels that contain a checkbox (label > input[type="checkbox"]) so
+   regular field labels (above inputs) are unaffected. Uses appearance:none
+   and an inline SVG checkmark for cross-browser crisp rendering. */
+label > input[type="checkbox"]{
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  min-width: 18px;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 10px;
+  border-radius: 6px;
+  border: 1px solid rgba(31,33,38,.95);
+  background: rgba(255,255,255,.02);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.02);
+  transition: background .12s ease, border-color .12s ease, box-shadow .12s ease;
+}
+label > input[type="checkbox"]:focus{
+  outline: 2px solid rgba(159,75,242,.12);
+  outline-offset: 2px;
+}
+label > input[type="checkbox"]:checked{
+  background: linear-gradient(135deg,var(--coral),var(--neon));
+  border-color: transparent;
+  box-shadow: 0 6px 18px rgba(159,75,242,.12);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'><polyline points='1 6 4 9 11 1' fill='none' stroke='%23ffffff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: center;
+}
+/* Make labels that wrap checkboxes align neatly */
+label > input[type="checkbox"]{ /* ensure inline labels align */ }
+label:has(input[type="checkbox"]) {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* TABLES */
+table{width:100%;border-collapse:collapse}
+th,td{
+  border-bottom:1px solid rgba(31,33,38,.95);
+  padding:10px 8px;
+  text-align:left;
+  font-size:13px;
+}
+th{color: var(--gray); font-weight: 900}
+.tag{
+  display:inline-flex;
+  padding:4px 8px;
+  border-radius:999px;
+  border:1px solid rgba(31,33,38,.95);
+  color: var(--muted);
+  font-size:12px;
+  background: rgba(12,12,16,.55);
+}
+
+/* OPTIONAL: subtle selection color */
+::selection{background: rgba(255,90,95,.28)}
+
+/* Details collapsible used in field/post details */
+.details { margin-top: 8px; border-top: 1px dashed rgba(255,255,255,0.04); padding-top: 8px; }
+.details .details-body { margin-top: 8px; }
+.details.collapsed .details-body { display: none; }
+.toggle-small { font-size: 13px; color: var(--btn); background: transparent; border: 0; cursor: pointer; padding: 6px 8px; }
+
+.summary-row { display: grid; grid-template-columns: 160px 1fr; gap: 12px; padding: 8px 10px; border-radius: 8px; align-items: center; }
+.summary-label { color: var(--muted); font-size: 13px; }
+.summary-value { color: var(--text); font-weight: 700; padding: 6px 8px; border-radius: 6px; text-align: left; word-break: break-word; }
