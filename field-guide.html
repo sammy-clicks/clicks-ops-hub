@@ -1361,7 +1361,42 @@ function getSummaryHtml(){
   // Add form data if available
   if(state.form && state.form.data){
     const labelMap = {
-      wha
+      manager_name: 'Nombre del encargado',
+      business_type: 'Tipo de negocio',
+      business_type_other: 'Otro tipo de negocio',
+      hours_google: 'Los horarios del negocio son los que están en Google',
+      hours_mon: 'Horarios Lunes',
+      hours_tue: 'Horarios Martes',
+      hours_wed: 'Horarios Miércoles',
+      hours_thu: 'Horarios Jueves',
+      hours_fri: 'Horarios Viernes',
+      hours_sat: 'Horarios Sábado',
+      hours_sun: 'Horarios Domingo',
+      instagram: 'Instagram',
+      phone: 'Teléfono',
+      menu_online: 'Tienen menú online',
+      menu_submit_method: 'Método de envío del menú',
+      menu_link: 'Enlace del menú',
+      menu_files: 'Archivos del menú',
+      music_types: 'Música usual',
+      live_music: 'Tienen música en vivo',
+      live_music_type: 'Tipo música en vivo',
+      live_music_days: 'Días música en vivo',
+      live_music_days_other: 'Días otros música en vivo',
+      busy_days: 'Días de mayor tráfico',
+      traffic_level: 'Nivel de tráfico',
+      clientele: 'Tipo de clientes',
+      promotion_active: 'Tienen promoción activa',
+      promotion_details: 'Detalles de la promoción',
+      cheapest_beer: 'Cerveza (más barata)',
+      cheapest_beer_price: 'Precio Cerveza (más barata)',
+      expensive_beer: 'Cerveza (más cara)',
+      expensive_beer_price: 'Precio Cerveza (más cara)',
+      cheapest_drink: 'Trago (más barato)',
+      cheapest_drink_price: 'Precio Trago (más barato)',
+      expensive_drink: 'Trago (más caro)',
+      expensive_drink_price: 'Precio Trago (más caro)',
+      payment_system: 'Sistema para cobrar'
     };
     Object.keys(state.form.data).forEach(k=>{
       const val = state.form.data[k];
