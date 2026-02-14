@@ -115,16 +115,16 @@
 
   function escapeHtml(s){ return String(s||'').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]; }); }
 
-  function showVenueDetails(localName){
-    // Load both v2 and legacy keys to be tolerant during transition
-    const venuesV2 = JSON.parse(localStorage.getItem('venuesDatabase_v2')) || [];
-    const venuesLegacy = JSON.parse(localStorage.getItem('venuesDatabase')) || [];
-    const venues = venuesV2.concat(venuesLegacy || []);
-    const postsV2 = JSON.parse(localStorage.getItem('postVisitsDatabase_v2')) || [];
-    const postsLegacy = JSON.parse(localStorage.getItem('postVisitsDatabase')) || [];
-    const posts = postsV2.concat(postsLegacy || []);
-    const venueEntries = venues.filter(v=> ((v.business_name||v.local||v.local_name||'').toString()) === localName);
-    const postEntries = posts.filter(p=> ((p.local||p.local_name||p.business_name||'').toString()) === localName);
+  async function showVenueDetails(localName){
+    try {
+      const [venuesRes, postsRes] = await Promise.all([
+        fetch('/api/venues'),
+        fetch('/api/posts')
+      ]);
+      const venues = venuesRes.ok ? await venuesRes.json() : [];
+      const posts = postsRes.ok ? await postsRes.json() : [];
+      const venueEntries = venues.filter(v=> ((v.business_name||v.local||v.local_name||'').toString()) === localName);
+      const postEntries = posts.filter(p=> ((p.local||p.local_name||p.business_name||'').toString()) === localName);
 
     const modal = document.createElement('div');
     modal.style.position = 'fixed'; modal.style.inset = 0; modal.style.background = 'rgba(0,0,0,.6)'; modal.style.display='flex'; modal.style.alignItems='center'; modal.style.justifyContent='center'; modal.style.zIndex = 9999;
@@ -460,47 +460,76 @@
     }
   }
 
-  function deleteVenue(localName) {
+  async function deleteVenue(localName) {
     if(!confirm(`¿Eliminar el negocio "${localName}", su visita y post-visita?`)) return;
-    const venues = JSON.parse(localStorage.getItem(getKey('venues'))) || [];
-    const posts = JSON.parse(localStorage.getItem(getKey('posts'))) || [];
-    const newVenues = venues.filter(v => (v.local || v.local_name || v.business_name || '').toString() !== localName);
-    const newPosts = posts.filter(p => (p.business_name || p.local || p.local_name || '').toString() !== localName);
-    localStorage.setItem(getKey('venues'), JSON.stringify(newVenues));
-    localStorage.setItem(getKey('posts'), JSON.stringify(newPosts));
-    loadVenuesData();
+    try {
+      await fetch('/api/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'venue', name: localName })
+      });
+      await fetch('/api/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'post', name: localName })
+      });
+      loadVenuesData();
+    } catch (err) {
+      console.error('Delete error:', err);
+      alert('Error al eliminar');
+    }
   }
 
-  function exportDb() {
-    const data = {
-      venues: JSON.parse(localStorage.getItem(getKey('venues'))) || [],
-      posts: JSON.parse(localStorage.getItem(getKey('posts'))) || [],
-      version: localStorage.getItem('db_version') || 'v2'
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `clicks_db_backup_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  async function exportDb() {
+    try {
+      const [venuesRes, postsRes] = await Promise.all([
+        fetch('/api/venues'),
+        fetch('/api/posts')
+      ]);
+      const venues = venuesRes.ok ? await venuesRes.json() : [];
+      const posts = postsRes.ok ? await postsRes.json() : [];
+      const data = { venues, posts, version: 'v2' };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `clicks_db_backup_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export error:', err);
+      alert('Error al exportar');
+    }
   }
 
-  function restoreDb() {
+  async function restoreDb() {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = e.target.files[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = (e) => {
+      reader.onload = async (e) => {
         try {
           const data = JSON.parse(e.target.result);
           if (data.venues && data.posts) {
-            localStorage.setItem(getKey('venues'), JSON.stringify(data.venues));
-            localStorage.setItem(getKey('posts'), JSON.stringify(data.posts));
-            if (data.version) localStorage.setItem('db_version', data.version);
+            // Post all venues
+            for (const venue of data.venues) {
+              await fetch('/api/venues', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: venue })
+              });
+            }
+            // Post all posts
+            for (const post of data.posts) {
+              await fetch('/api/posts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ data: post })
+              });
+            }
             alert('Base de datos restaurada exitosamente.');
             loadVenuesData();
           } else {
@@ -515,65 +544,74 @@
     input.click();
   }
 
-  function loadVenuesData() {
-    const venues = JSON.parse(localStorage.getItem(getKey('venues'))) || [];
-    const posts = JSON.parse(localStorage.getItem(getKey('posts'))) || [];
-    const tableBody = document.getElementById('venuesTableBody');
+  async function loadVenuesData() {
+    try {
+      const [venuesRes, postsRes] = await Promise.all([
+        fetch('/api/venues'),
+        fetch('/api/posts')
+      ]);
+      const venues = venuesRes.ok ? await venuesRes.json() : [];
+      const posts = postsRes.ok ? await postsRes.json() : [];
+      const tableBody = document.getElementById('venuesTableBody');
 
-    const q = (document.getElementById('venueSearch')?.value || '').toLowerCase().trim();
+      const q = (document.getElementById('venueSearch')?.value || '').toLowerCase().trim();
 
-    tableBody.innerHTML = '';
-    // iterate venues and build rows
-    venues.forEach((entry) => {
-      const localName = (entry.local || entry.local_name || entry.business_name || '').toString();
-      const nivelPreview = (posts.find(p=> ((p.local||p.local_name||p.business_name||'') === localName))?.interes) || entry.interes || '';
-      const contacto = entry.manager_name || (entry.form && entry.form.manager_name) || entry.contacto_nombre || entry.autoridad_nombre || entry.empleado || '';
-      const phonePreview = entry.phone || (entry.form && entry.form.phone) || entry.contacto_tel || entry.autoridad_tel || entry.tel || '';
-      const instagramPreview = entry.instagram || (entry.form && entry.form.instagram) || entry.instagram_handle || '';
-      const hay = (localName + ' ' + (entry.zona||entry.local_zona||entry.business_zone||'') + ' ' + (nivelPreview||'') + ' ' + contacto + ' ' + phonePreview + ' ' + instagramPreview).toLowerCase();
-      if(q && !hay.includes(q)) return;
-      // find latest post for this local (match against multiple possible keys)
-      const relatedPosts = posts.filter(p=> ((p.business_name||p.local||p.local_name||'') === localName));
-      const latestPost = relatedPosts.length ? relatedPosts[relatedPosts.length-1] : null;
-      // determine date: prefer post created_at, else venue started_at
-      const dateIso = (latestPost && latestPost.created_at) || entry.created_at || entry.started_at || '';
-      const dateText = dateIso ? formatDateIsoToDDMMYYYY(dateIso) : '';
-      const nivel = (latestPost && (latestPost.interest_level || latestPost.interes)) || entry.interes || '—';
-      const firmo = (latestPost ? (latestPost.agreement_signed || latestPost.firmo) : (entry.consentimiento || false));
-      // Resolve manager_name with multiple fallbacks, including scanning _raw for likely fields
-      let encargado = entry.manager_name || (entry.form && entry.form.manager_name) || entry.contacto_nombre || entry.autoridad_nombre || entry.empleado || '';
-      if(!encargado && entry._raw){
-        const raw = entry._raw;
-        const candidates = ['manager_name','contacto_nombre','contacto_name','autoridad_nombre','autoridad_name','manager','encargado','contacto'];
-        for(const k of Object.keys(raw || {})){
-          const lk = k.toString().toLowerCase();
-          if(candidates.some(c=> lk.includes(c)) && raw[k]){ encargado = raw[k]; break; }
+      tableBody.innerHTML = '';
+      // iterate venues and build rows
+      venues.forEach((entry) => {
+        const localName = (entry.local || entry.local_name || entry.business_name || '').toString();
+        const nivelPreview = (posts.find(p=> ((p.local||p.local_name||p.business_name||'') === localName))?.interes) || entry.interes || '';
+        const contacto = entry.manager_name || (entry.form && entry.form.manager_name) || entry.contacto_nombre || entry.autoridad_nombre || entry.empleado || '';
+        const phonePreview = entry.phone || (entry.form && entry.form.phone) || entry.contacto_tel || entry.autoridad_tel || entry.tel || '';
+        const instagramPreview = entry.instagram || (entry.form && entry.form.instagram) || entry.instagram_handle || '';
+        const hay = (localName + ' ' + (entry.zona||entry.local_zona||entry.business_zone||'') + ' ' + (nivelPreview||'') + ' ' + contacto + ' ' + phonePreview + ' ' + instagramPreview).toLowerCase();
+        if(q && !hay.includes(q)) return;
+        // find latest post for this local (match against multiple possible keys)
+        const relatedPosts = posts.filter(p=> ((p.business_name||p.local||p.local_name||'') === localName));
+        const latestPost = relatedPosts.length ? relatedPosts[relatedPosts.length-1] : null;
+        // determine date: prefer post created_at, else venue started_at
+        const dateIso = (latestPost && latestPost.created_at) || entry.created_at || entry.started_at || '';
+        const dateText = dateIso ? formatDateIsoToDDMMYYYY(dateIso) : '';
+        const nivel = (latestPost && (latestPost.interest_level || latestPost.interes)) || entry.interes || '—';
+        const firmo = (latestPost ? (latestPost.agreement_signed || latestPost.firmo) : (entry.consentimiento || false));
+        // Resolve manager_name with multiple fallbacks, including scanning _raw for likely fields
+        let encargado = entry.manager_name || (entry.form && entry.form.manager_name) || entry.contacto_nombre || entry.autoridad_nombre || entry.empleado || '';
+        if(!encargado && entry._raw){
+          const raw = entry._raw;
+          const candidates = ['manager_name','contacto_nombre','contacto_name','autoridad_nombre','autoridad_name','manager','encargado','contacto'];
+          for(const k of Object.keys(raw || {})){
+            const lk = k.toString().toLowerCase();
+            if(candidates.some(c=> lk.includes(c)) && raw[k]){ encargado = raw[k]; break; }
+          }
         }
-      }
-      const telefono = entry.phone || (entry.form && entry.form.phone) || entry.contacto_tel || entry.autoridad_tel || entry.tel || '';
-      const instagram = entry.instagram || (entry.form && entry.form.instagram) || entry.instagram_handle || '';
-      // Visitado: based on contact_type (Presencial -> Sí, Por telefono -> No)
-      const ct = entry.contact_type || entry.tipo_contacto || '';
-      const visitado = (ct.toString().toLowerCase() === 'calle' || ct.toString().toLowerCase() === 'presencial') ? 'Sí' : 'No';
+        const telefono = entry.phone || (entry.form && entry.form.phone) || entry.contacto_tel || entry.autoridad_tel || entry.tel || '';
+        const instagram = entry.instagram || (entry.form && entry.form.instagram) || entry.instagram_handle || '';
+        // Visitado: based on contact_type (Presencial -> Sí, Por telefono -> No)
+        const ct = entry.contact_type || entry.tipo_contacto || '';
+        const visitado = (ct.toString().toLowerCase() === 'calle' || ct.toString().toLowerCase() === 'presencial') ? 'Sí' : 'No';
 
-      const row = document.createElement('tr');
-      row.style.cursor = 'pointer';
-      row.innerHTML = `
-        <td>${escapeHtml(localName) || 'N/A'}</td>
-        <td>${escapeHtml(entry.business_zone || entry.zona || entry.local_zona || 'N/A')}</td>
-        <td>${escapeHtml(encargado || '—')}</td>
-        <td>${escapeHtml(telefono || '—')}</td>
-        <td>${escapeHtml(instagram || '—')}</td>
-        <td>${escapeHtml(visitado)}</td>
-        <td>${escapeHtml(dateText)}</td>
-        <td>${escapeHtml(nivel)}</td>
-        <td>${firmo ? 'Sí' : 'No'}</td>
-        <td>${escapeHtml(entry.notas || entry.notes || entry._notes || '—')}</td>
-        <td><button onclick="deleteVenue('${localName.replace(/'/g, "\\'")}')" class="btn ghost" title="Eliminar negocio">🗑️</button></td>
-      `;
-      row.addEventListener('click', ()=>{ showVenueDetails(localName); });
-      tableBody.appendChild(row);
-    });
+        const row = document.createElement('tr');
+        row.style.cursor = 'pointer';
+        row.innerHTML = `
+          <td>${escapeHtml(localName) || 'N/A'}</td>
+          <td>${escapeHtml(entry.business_zone || entry.zona || entry.local_zona || 'N/A')}</td>
+          <td>${escapeHtml(encargado || '—')}</td>
+          <td>${escapeHtml(telefono || '—')}</td>
+          <td>${escapeHtml(instagram || '—')}</td>
+          <td>${escapeHtml(visitado)}</td>
+          <td>${escapeHtml(dateText)}</td>
+          <td>${escapeHtml(nivel)}</td>
+          <td>${firmo ? 'Sí' : 'No'}</td>
+          <td>${escapeHtml(entry.notas || entry.notes || entry._notes || '—')}</td>
+          <td><button onclick="deleteVenue('${localName.replace(/'/g, "\\'")}')" class="btn ghost" title="Eliminar negocio">🗑️</button></td>
+        `;
+        row.addEventListener('click', ()=>{ showVenueDetails(localName); });
+        tableBody.appendChild(row);
+      });
+    } catch (err) {
+      console.error('Load error:', err);
+      alert('Error al cargar datos');
+    }
   }
 
   // Load data on page load and wire search

@@ -73,20 +73,29 @@
     if(type === 'posts') return v === 'v2' ? 'postVisitsDatabase_v2' : 'postVisitsDatabase';
     return type;
   }
-  function loadVenuesOptions() {
-    const data = JSON.parse(localStorage.getItem(getKey('venues'))) || [];
-    const posts = JSON.parse(localStorage.getItem(getKey('posts'))) || [];
-    const postLocals = new Set(posts.map(p => (p.business_name || p.local || p.local_name || '').toString()).filter(Boolean));
-    // extract unique local names excluding those that already have a post-visit
-    const allNames = Array.from(new Set(data.map(d => (d && (d.business_name || d.local || d.local_name)) || '').filter(Boolean)));
-    const names = allNames.filter(n => !postLocals.has(n));
-    return names;
+  async function loadVenuesOptions() {
+    try {
+      const [venuesRes, postsRes] = await Promise.all([
+        fetch('/api/venues'),
+        fetch('/api/posts')
+      ]);
+      const data = venuesRes.ok ? await venuesRes.json() : [];
+      const posts = postsRes.ok ? await postsRes.json() : [];
+      const postLocals = new Set(posts.map(p => (p.business_name || p.local || p.local_name || '').toString()).filter(Boolean));
+      // extract unique local names excluding those that already have a post-visit
+      const allNames = Array.from(new Set(data.map(d => (d && (d.business_name || d.local || d.local_name)) || '').filter(Boolean)));
+      const names = allNames.filter(n => !postLocals.has(n));
+      return names;
+    } catch (err) {
+      console.error('Load options error:', err);
+      return [];
+    }
   }
 
-  function renderNewForm(prefill) {
+  async function renderNewForm(prefill) {
     const screenBody = document.getElementById('screenBody');
     if(!screenBody) return;
-    const names = loadVenuesOptions();
+    const names = await loadVenuesOptions();
     const optionsHtml = names.length ? names.map(n => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('') : '<option value="">(No hay negocios en la base)</option>';
 
     screenBody.innerHTML = `
@@ -134,7 +143,7 @@
       const sp = document.getElementById('startPanel'); if(sp) sp.style.display = '';
     });
 
-    document.getElementById('btnSavePost')?.addEventListener('click', ()=>{
+    document.getElementById('btnSavePost')?.addEventListener('click', async ()=>{
       const local = document.getElementById('post_local')?.value || '';
       if(!local) { alert('Selecciona un negocio válido de la lista.'); return; }
       const interes = document.getElementById('post_interest')?.value || '';
@@ -143,12 +152,9 @@
       const fileEl = document.getElementById('post_file');
       const file = (fileEl && fileEl.files && fileEl.files[0]) ? fileEl.files[0] : null;
 
-      const dbKey = getKey('posts');
-      const existing = JSON.parse(localStorage.getItem(dbKey)) || [];
-
       if(file){
         const reader = new FileReader();
-        reader.onload = function(e){
+        reader.onload = async function(e){
           const base64 = e.target.result.split(',')[1]; // quitar data:application/pdf;base64,
           const v = {
             business_name: local,
@@ -160,12 +166,20 @@
             created_at: new Date().toISOString(),
             _raw: { local, interes, firmo, tipo, fileName: file.name }
           };
-          existing.push(v);
-          localStorage.setItem(dbKey, JSON.stringify(existing));
-          alert('Post‑visita guardada.');
-          // reset to start
-          document.getElementById('screenBody').innerHTML = '';
-          const sp = document.getElementById('startPanel'); if(sp) sp.style.display = '';
+          try {
+            await fetch('/api/posts', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ data: v })
+            });
+            alert('Post‑visita guardada.');
+            // reset to start
+            document.getElementById('screenBody').innerHTML = '';
+            const sp = document.getElementById('startPanel'); if(sp) sp.style.display = '';
+          } catch (err) {
+            console.error('Save error:', err);
+            alert('Error al guardar');
+          }
         };
         reader.readAsDataURL(file);
       } else {
@@ -179,12 +193,20 @@
           created_at: new Date().toISOString(),
           _raw: { local, interes, firmo, tipo, fileName: '' }
         };
-        existing.push(v);
-        localStorage.setItem(dbKey, JSON.stringify(existing));
-        alert('Post‑visita guardada.');
-        // reset to start
-        document.getElementById('screenBody').innerHTML = '';
-        const sp = document.getElementById('startPanel'); if(sp) sp.style.display = '';
+        try {
+          await fetch('/api/posts', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ data: v })
+          });
+          alert('Post‑visita guardada.');
+          // reset to start
+          document.getElementById('screenBody').innerHTML = '';
+          const sp = document.getElementById('startPanel'); if(sp) sp.style.display = '';
+        } catch (err) {
+          console.error('Save error:', err);
+          alert('Error al guardar');
+        }
       }
     });
 
@@ -197,32 +219,28 @@
     }
   }
 
-  function setupStartPanel(){
-    document.getElementById('btnStartNew')?.addEventListener('click', ()=>{
-      const available = loadVenuesOptions();
+  async function setupStartPanel(){
+    document.getElementById('btnStartNew')?.addEventListener('click', async ()=>{
+      const available = await loadVenuesOptions();
       if(!available || available.length === 0){
         alert('Todos los negocios visitados ya tienen post‑visita.');
         return;
       }
       const sp = document.getElementById('startPanel'); if(sp) sp.style.display = 'none';
-      renderNewForm();
+      await renderNewForm();
     });
 
     // btnStartContinue removed from UI; keep handler safeguarded if ever restored
-    document.getElementById('btnStartContinue')?.addEventListener('click', ()=>{
-      const dbKey = getKey('posts');
-      const existing = JSON.parse(localStorage.getItem(dbKey)) || [];
-      if(existing.length === 0){ alert('No hay post‑visitas guardadas para continuar.'); return; }
-      const last = existing[existing.length -1];
-      const sp = document.getElementById('startPanel'); if(sp) sp.style.display = 'none';
-      renderNewForm(last);
+    document.getElementById('btnStartContinue')?.addEventListener('click', async ()=>{
+      // For continue, perhaps load from DB, but for simplicity, skip or implement later
+      alert('Continuar no implementado aún.');
     });
   }
 
   function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"}[c]; }); }
 
-  document.addEventListener('DOMContentLoaded', ()=>{
-    setupStartPanel();
+  document.addEventListener('DOMContentLoaded', async ()=>{
+    await setupStartPanel();
     document.getElementById('loginForm').addEventListener('submit', (e) => {
       e.preventDefault();
       const user = document.getElementById('username').value;

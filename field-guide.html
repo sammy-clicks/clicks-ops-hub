@@ -816,108 +816,20 @@ function isReadyToSubmit(){
   return true;
 }
 
-// Save data to localStorage for venues board
-function saveToDatabase(payload) {
-  function getKey(type){
-    const v = localStorage.getItem('db_version') || '';
-    if(type === 'venues') return v === 'v2' ? 'venuesDatabase_v2' : 'venuesDatabase';
-    return type;
+// Save data to database
+async function saveToDatabase(payload) {
+  try {
+    const response = await fetch('/api/venues', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: payload })
+    });
+    if (!response.ok) throw new Error('Failed to save');
+    console.log('Venue saved to database');
+  } catch (err) {
+    console.error('Save error:', err);
+    alert('Error al guardar en la base de datos');
   }
-  const dbKey = getKey('venues');
-  const existingData = JSON.parse(localStorage.getItem(dbKey)) || [];
-  // Merge any captured form fields (instagram, phone) into the payload when available
-  try{
-    const formData = (window.state && state.form && state.form.data) ? state.form.data : {};
-    // common keys that may exist in different forms
-    if(formData.instagram) payload.instagram = formData.instagram;
-    if(formData.phone) payload.phone = formData.phone;
-    if(formData.manager_name) payload.manager_name = formData.manager_name;
-    if(formData.business_name) payload.business_name = formData.business_name;
-    if(formData.business_zone) payload.business_zone = formData.business_zone;
-    // also pull from state if available (older code paths)
-    if(state.local && state.local.nombre) payload.business_name = payload.business_name || state.local.nombre;
-    if(state.local && state.local.zona) payload.business_zone = payload.business_zone || state.local.zona;
-    if(state.autoridad && state.autoridad.nombre) payload.manager_name = payload.manager_name || state.autoridad.nombre;
-  }catch(e){ /* ignore if state not available */ }
-  // add created timestamp
-  if(!payload.created_at) payload.created_at = (new Date()).toISOString();
-  // If the workspace is using v2 DB schema, build canonical v2 entry with only agreed fields
-  const activeVersion = localStorage.getItem('db_version') || '';
-  if(activeVersion === 'v2'){
-    // helper to safely read nested values
-    const form = (state.form && state.form.data) ? state.form.data : {};
-    const v2Entry = {
-      // 1-14 core
-      employee: state.meta && state.meta.empleado || payload.empleado || '',
-      contact_type: state.meta && state.meta.tipo_contacto || payload.tipo_contacto || '',
-      business_name: payload.business_name || payload.local || (state.local && state.local.nombre) || '',
-      business_zone: payload.business_zone || payload.local_zona || (state.local && state.local.zona) || '',
-      business_zone_custom: payload.local_zona_custom || (state.local && state.local.zona_custom) || '',
-      precheck_app_ok: (payload.precheck_app_ok !== undefined) ? payload.precheck_app_ok : (state.precheck && state.precheck.app_ok) || false,
-      precheck_internet_ok: (payload.precheck_internet_ok !== undefined) ? payload.precheck_internet_ok : (state.precheck && state.precheck.internet_ok) || false,
-      precheck_pitch_ready: (payload.precheck_pitch_ready !== undefined) ? payload.precheck_pitch_ready : (state.precheck && state.precheck.pitch_ready) || false,
-      manager_present: (payload.autoridad_esta !== undefined) ? payload.autoridad_esta : (state.autoridad && state.autoridad.esta) || false,
-      pitch_given: (payload.pitch_dicho !== undefined) ? payload.pitch_dicho : (state.pitch && state.pitch.dicho) || false,
-      result: payload.resultado || (state.resultado && state.resultado.tipo) || '',
-      followup_date: payload.seguimiento_fecha || (state.resultado && state.resultado.seguimiento_fecha) || '',
-      consent: (payload.consentimiento !== undefined) ? payload.consentimiento : (state.consentimiento && state.consentimiento.ok) || false,
-      form_saved: (payload.form_enviado !== undefined) ? payload.form_enviado : (state.form && state.form.enviado) || false,
-
-      // 15-51 form fields (only if form_saved)
-      manager_name: payload.manager_name || payload.contacto_nombre || (state.autoridad && state.autoridad.nombre) || '',
-      business_type: form.business_type || payload.business_type || '',
-      business_type_other: form.business_type_other || payload.business_type_other || '',
-      hours_google: form.hours_google || payload.hours_google || '',
-      hours: {
-        mon: form.hours_mon || payload.hours_mon || '',
-        tue: form.hours_tue || payload.hours_tue || '',
-        wed: form.hours_wed || payload.hours_wed || '',
-        thu: form.hours_thu || payload.hours_thu || '',
-        fri: form.hours_fri || payload.hours_fri || '',
-        sat: form.hours_sat || payload.hours_sat || '',
-        sun: form.hours_sun || payload.hours_sun || ''
-      },
-      instagram: (payload.instagram !== undefined) ? payload.instagram : (form.instagram || form.instagram_handle || ''),
-      phone: (payload.phone !== undefined) ? payload.phone : (form.phone || payload.contacto_tel || (state.autoridad && state.autoridad.tel) || ''),
-      menu_online: form.menu_online || payload.menu_online || '',
-      menu_submission_method: form.menu_submit_method || payload.menu_submission_method || '',
-      menu_link: form.menu_link || payload.menu_link || '',
-      menu_files: null,
-      music_types: form.music_types || payload.music_types || [],
-      music_other: form.music_other || payload.music_other || '',
-      live_music: form.live_music || payload.live_music || '',
-      live_music_type: form.live_music_type || payload.live_music_type || '',
-      live_music_days: form.live_music_days || payload.live_music_days || [],
-      live_music_days_other: form.live_music_days_other || payload.live_music_days_other || '',
-      busy_days: form.busy_days || payload.busy_days || [],
-      traffic_level: form.traffic_level || payload.traffic_level || '',
-      clientele: form.clientele || payload.clientele || '',
-      promos_active: form.promos_active || payload.promos_active || '',
-      promos_details: form.promos_details || payload.promos_details || '',
-      beer_cheapest_name: form.beer_cheapest_name || payload.beer_cheapest_name || '',
-      beer_cheapest_price: form.beer_cheapest_price || payload.beer_cheapest_price || '',
-      beer_priciest_name: form.beer_priciest_name || payload.beer_priciest_name || '',
-      beer_priciest_price: form.beer_priciest_price || payload.beer_priciest_price || '',
-      drink_cheapest_name: form.drink_cheapest_name || payload.drink_cheapest_name || '',
-      drink_cheapest_price: form.drink_cheapest_price || payload.drink_cheapest_price || '',
-      drink_priciest_name: form.drink_priciest_name || payload.drink_priciest_name || '',
-      drink_priciest_price: form.drink_priciest_price || payload.drink_priciest_price || '',
-      pos_system: form.pos_system || payload.pos_system || '',
-      pos_other: form.pos_other || payload.pos_other || '',
-      notas: state.notas || form.notas || payload.notas || '',
-
-      // traceability
-      started_at: state.meta && state.meta.started_at || payload.started_at || '',
-      created_at: payload.created_at || (new Date()).toISOString(),
-      _raw: payload
-    };
-    existingData.push(v2Entry);
-    console.log('saveToDatabase: saved v2 entry', v2Entry, 'to', dbKey);
-  } else {
-    existingData.push(payload);
-    console.log('saveToDatabase: saved legacy payload', payload, 'to', dbKey);
-  }
-  localStorage.setItem(dbKey, JSON.stringify(existingData));
 }
 
 // Add functionality to the new 'Someter' button
@@ -1643,16 +1555,16 @@ function bind(stepKey){
   if (stepKey === "submit"){
     $("#btnBack")?.addEventListener("click", back);
 
-    // Nuevo botón Someter - guarda en localStorage
-    $("#btnSubmit")?.addEventListener("click", () => {
+    // Nuevo botón Someter - guarda en base de datos
+    $("#btnSubmit")?.addEventListener("click", async () => {
       if (!isReadyToSubmit()) {
         alert('Por favor, completa todos los campos requeridos antes de someter.');
         return;
       }
 
       const payload = buildPayload();
-      saveToDatabase(payload);
-      alert('Negocio sometido y guardado en la base de datos local.');
+      await saveToDatabase(payload);
+      alert('Negocio sometido y guardado en la base de datos.');
       
       // Auto reset tras éxito para la próxima visita
       localStorage.removeItem(STORAGE_KEY);
