@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Post‑Visita — Clicks Ops Hub (backup)</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="nav">
+  <div class="inner">
+    <div class="brand"><span class="dot"></span><span>Clicks Ops Hub</span></div>
+    <div class="links">
+      <a class="btn primary" href="index.html">Home</a>
+      <a class="btn coral" href="field-guide.html">Visitas</a>
+      <a class="btn yellow active" href="post-visit.html">Post‑Visita</a>
+      <a class="btn neon" href="venue-board.html">Venues</a>
+      <a class="btn cyan" href="excel-automator.html">Automator</a>
+      <a class="btn muted" href="files-vault.html">Archivos</a>
+    </div>
+  </div>
+</div>
+<div class="wrap">
+  <div class="card col-12">
+    <h1>Post‑Visita — Clicks Ops Hub</h1>
+    <p>Registrar la visita en 60 segundos. Sin Excel juggling.</p>
+  </div>
+  <div style="height:12px"></div>
+  
+<div class="grid">
+  <div class="card col-6">
+    <div class="title">Registro rápido</div>
+    <div class="row">
+      <div><label class="small">Local</label><input placeholder="Nombre del local" /></div>
+      <div><label class="small">Zona</label>
+        <select><option>Selecciona…</option><option>Viejo San Juan</option><option>La Placita</option><option>Calle Loíza</option><option>Condado</option><option>Otro</option></select>
+      </div>
+    </div>
+    <div class="row" style="margin-top:10px">
+      <div><label class="small">Interesado</label><select><option>No</option><option>Sí</option></select></div>
+      <div><label class="small">Firmó acuerdo</label><select><option>No</option><option>Sí</option></select></div>
+    </div>
+    <div style="margin-top:10px">
+      <label class="small">Notas</label>
+      <textarea placeholder="Ej: Prefiere seguimiento jueves. Dueño no estaba; dejó teléfono."></textarea>
+    </div>
+    <!-- Evidencia: mover aquí el upload del acuerdo firmado -->
+    <div class="title">Evidencia</div>
+    <p>Subir foto/PDF del acuerdo firmado y guardar con nombre estándar.</p>
+    <div class="hr"></div>
+    <p class="small">Regla de nombre: YYYY-MM-DD_ZONA_Local_AcuerdoFree.pdf</p>
+    <div style="margin-top:10px">
+      <input type="file" />
+    </div>
+
+    <div class="hr"></div>
+    <a class="btn primary" href="index.html">Guardar</a>
+    <p class="small" style="margin-top:8px">Layout listo. Luego se conecta al endpoint / Apps Script.</p>
+  </div>
+  
+</div>
+
+  <div style="height:16px"></div>
+  <div class="small">Clicks LLC · Ops Hub interno</div>
+</div>
+</body>
+</html>
