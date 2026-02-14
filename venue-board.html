@@ -359,6 +359,7 @@
                 const parts = [];
                 const pushVal = (label, val, formatFn)=>{
                   if(val===undefined || val===null) return;
+                  if(typeof val === 'boolean') return;
                   if(Array.isArray(val) && val.length===0) return;
                   let out = val;
                   if(formatFn) out = formatFn(val);
