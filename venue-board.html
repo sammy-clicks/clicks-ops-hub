@@ -209,44 +209,7 @@
           const telefonoHtml = telefono ? `<a href="${telLink}" style="color:inherit; text-decoration:none">${escapeHtml(telefono)}</a> <button class="btn ghost" onclick="location.href='${telLink}'" title="Llamar">📞</button>` : '—';
           const instagramHtml = instHref ? `<a href="${instHref}" target="_blank" rel="noopener noreferrer" style="color:inherit; text-decoration:none">@${escapeHtml(cleanInst)}</a>` : (instagram ? escapeHtml('@' + instagram.replace(/^@/, '')) : '—');
 
-          // Extract additional fields for summary
-          const businessType = entry.business_type || (entry.form && entry.form.data && entry.form.data.business_type) || '';
-          const menuOnline = entry.menu_online || (entry.form && entry.form.data && entry.form.data.menu_online) || '';
-          const liveMusic = entry.live_music || (entry.form && entry.form.data && entry.form.data.live_music) || '';
-          const trafficLevel = entry.traffic_level || (entry.form && entry.form.data && entry.form.data.traffic_level) || '';
-          const promoActive = entry.promotion_active || entry.promos_active || (entry.form && entry.form.data && entry.form.data.promotion_active) || '';
-
-          // condensed summary (no bullets)
-          vdiv.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
-              <div style="flex:1">
-                <div style="margin-bottom:8px; line-height:1.4; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-                  <div><strong>Empleado:</strong> ${escapeHtml(empleado || '—')}</div>
-                  <div><strong>Modalidad:</strong> ${escapeHtml(modalidad || '—')}</div>
-                  <div><strong>Fecha:</strong> ${escapeHtml(fecha || '—')}</div>
-                  <div><strong>Tipo negocio:</strong> ${escapeHtml(businessType || '—')}</div>
-                  <div><strong>Encargado:</strong> ${escapeHtml(encargado || '—')}</div>
-                  <div><strong>Menu online:</strong> ${escapeHtml(menuOnline || '—')}</div>
-                  <div><strong>Telefono:</strong> ${telefonoHtml}</div>
-                  <div><strong>Música en vivo:</strong> ${escapeHtml(liveMusic || '—')}</div>
-                  <div><strong>Instagram:</strong> ${instagramHtml}</div>
-                  <div><strong>Tráfico:</strong> ${escapeHtml(trafficLevel ? trafficLevel + '/5' : '—')}</div>
-                  <div><strong>Promociones:</strong> ${escapeHtml(promoActive || '—')}</div>
-                </div>
-              </div>
-              <div style="min-width:140px; text-align:right">
-                <button class="btn ghost" data-idx="${idx}" style="margin-bottom:6px;">Mostrar detalles</button>
-              </div>
-            </div>
-            <div class="visit-details" id="visit-details-${idx}" style="display:none; margin-top:8px; background:rgba(0,0,0,.02); padding:10px; border-radius:6px;">
-              <!-- detailed canonical fields (show only when present) -->
-              <div class="visit-canonical" style="line-height:1.5;">
-              </div>
-            </div>
-          `;
-
-          // After inserting the HTML, populate the canonical fields block with only the exact requested fields
-          const canonicalElId = 'visit-details-' + idx;
+          // Extract form data for direct display
           function pick(...keys){
             // First, try direct in entry
             for(const k of keys){
@@ -256,7 +219,6 @@
               let found = true;
               for(const p of parts){ if(cur && typeof cur === 'object' && (p in cur)) cur = cur[p]; else { found = false; break; } }
               if(found && cur !== undefined && cur !== null && cur !== '') {
-                console.log(`Found ${k}:`, cur);
                 return cur;
               }
             }
@@ -266,194 +228,128 @@
                 if(k.startsWith('_raw.')){
                   const rk = k.slice(5);
                   if(rk in entry._raw) {
-                    console.log(`Found _raw.${rk}:`, entry._raw[rk]);
                     return entry._raw[rk];
                   }
                 } else {
                   // search in _raw by key name
                   for(const rk of Object.keys(entry._raw)){
                     if(rk.toLowerCase().includes(k.toLowerCase().split('.')[0])){
-                      console.log(`Found _raw.${rk} (matching ${k}):`, entry._raw[rk]);
                       return entry._raw[rk];
                     }
                   }
                 }
               }
             }
-            console.log(`Not found: ${keys.join(', ')}`);
             return undefined;
           }
 
-          const block = document.getElementById(canonicalElId)?.querySelector('.visit-canonical');
-          if(block){
-            console.log('Block found, processing fields for idx', idx);
-            console.log('Entry data:', entry);
-            const parts = [];
-            const pushVal = (label, val, formatFn)=>{
-              if(val===undefined || val===null) return;
-              if(typeof val === 'boolean') return;
-              if(Array.isArray(val) && val.length===0) return;
-              let out = val;
-              if(formatFn) out = formatFn(val);
-              else if(typeof val === 'object') out = JSON.stringify(val);
-              if(String(out).trim() === '') return;
-              parts.push(`<div><strong>${label}:</strong> ${escapeHtml(String(out))}</div>`);
-            };
-
-            // list of requested fields and candidate keys to resolve with Spanish question labels
-            const requested = [
-              ['Nombre del encargado', ['manager_name','form.data.manager_name','form.manager_name','_raw.manager_name','contacto_nombre','autoridad_nombre','empleado']],
-              ['Tipo de negocio', ['business_type','form.data.business_type','tipo_negocio','business_category']],
-              ['Los horarios del negocio son los que estan en Google', ['hours_google','form.data.hours_google','hours.google','horas_google']],
-              ['lunes', ['hours.mon','form.data.hours_mon','hours_mon','horas.mon','horas_mon']],
-              ['martes', ['hours.tue','form.data.hours_tue','hours_tue','horas.tue','horas_tue']],
-              ['miercoles', ['hours.wed','form.data.hours_wed','hours_wed','horas.wed','horas_wed']],
-              ['jueves', ['hours.thu','form.data.hours_thu','hours_thu','horas.thu','horas_thu']],
-              ['viernes', ['hours.fri','form.data.hours_fri','hours_fri','horas.fri','horas_fri']],
-              ['sabado', ['hours.sat','form.data.hours_sat','hours_sat','horas.sat','horas_sat']],
-              ['domingo', ['hours.sun','form.data.hours_sun','hours_sun','horas.sun','horas_sun']],
-              ['Instagram', ['instagram','form.data.instagram','form.instagram','instagram_handle','_raw.instagram']],
-              ['Telefono', ['phone','form.data.phone','form.phone','contacto_tel','tel','_raw.phone']],
-              ['Tienen menu online', ['menu_online','form.data.menu_online','menu.online','_raw.menu_online']],
-              ['Metodo', ['menu_submit_method','form.data.menu_submit_method','menu_submission_method','menu.submission_method','_raw.menu_submission_method']],
-              ['Link del menu', ['menu_link','form.data.menu_link','menu.link','_raw.menu_link']],
-              ['Archivo del menu', ['menu_files','form.data.menu_files','menu.files','menu_files','_raw.menu_files']],
-              ['Musica usual', ['music_types','form.data.music_types','music.types','_raw.music_types']],
-              ['Otro(musica)', ['music_other','form.data.music_other','music.other','_raw.music_other']],
-              ['Tienen musica en vivo', ['live_music','form.data.live_music','music.live','_raw.live_music']],
-              ['Tipo de musica', ['live_music_type','form.data.live_music_type','live_music.type','_raw.live_music_type']],
-              ['Dias de musica en vivo', ['live_music_days','form.data.live_music_days','live_music.days','_raw.live_music_days']],
-              ['Otros dias', ['live_music_days_other','form.data.live_music_days_other','live_music.days_other','_raw.live_music_days_other']],
-              ['Dias de mayor trafico', ['busy_days','form.data.busy_days','busy.days','_raw.busy_days']],
-              ['Nivel de trafico', ['traffic_level','form.data.traffic_level','traffic','_raw.traffic_level']],
-              ['Tipo de clientes', ['clientele','form.data.clientele','_raw.clientele']],
-              ['Tienen promocion activa', ['promotion_active','form.data.promotion_active','promos_active','_raw.promos_active']],
-              ['Detalles de la promocion', ['promotion_details','form.data.promotion_details','promos_details','promos.details','_raw.promos_details']],
-              ['Cerveza (mas barata)', ['cheapest_beer','form.data.cheapest_beer','beer_cheapest_name','beer.cheapest.name','_raw.beer_cheapest_name']],
-              ['Precio Cerveza (mas barata)', ['cheapest_beer_price','form.data.cheapest_beer_price','beer_cheapest_price','beer.cheapest.price','_raw.beer_cheapest_price']],
-              ['Cerveza (mas cara)', ['expensive_beer','form.data.expensive_beer','beer_priciest_name','beer.priciest.name','_raw.beer_priciest_name']],
-              ['Precio Cerveza (mas cara)', ['expensive_beer_price','form.data.expensive_beer_price','beer_priciest_price','beer.priciest.price','_raw.beer_priciest_price']],
-              ['Trago (mas barato)', ['cheapest_drink','form.data.cheapest_drink','drink_cheapest_name','drink.cheapest.name','_raw.drink_cheapest_name']],
-              ['Precio Trago (mas barato)', ['cheapest_drink_price','form.data.cheapest_drink_price','drink_cheapest_price','drink.cheapest.price','_raw.drink_cheapest_price']],
-              ['Trago (mas caro)', ['expensive_drink','form.data.expensive_drink','drink_priciest_name','drink.priciest.name','_raw.drink_priciest_name']],
-              ['Precio Trago (mas caro)', ['expensive_drink_price','form.data.expensive_drink_price','drink_priciest_price','drink.priciest.price','_raw.drink_priciest_price']],
-              ['Sistema para cobrar', ['payment_system','form.data.payment_system','pos_system','pos.system','_raw.pos_system']],
-              ['Otro sistema', ['pos_other','form.data.pos_other','pos.other','_raw.pos_other']],
-              ['Notas', ['notas','form.data.notas','state.notas','notes','_notes','_raw.notas']]
-            ];
-
-            for(const [label, keys] of requested){
-              const val = pick(...keys);
-              console.log(`${label}: ${val}`);
-              if(label === 'Archivo del menu' && val){
-                // menu_files metadata
-                const files = Array.isArray(val) ? val : (val.files || val.file || []);
-                if(Array.isArray(files) && files.length){
-                  const meta = files.map(f=>{
-                    try{ return { name: f.name || f.filename || f.fileName || f.title || '', size: f.size || f.byteSize || null, type: f.type || f.mime || '' }; }catch(e){ return { name: String(f) }; }
-                  });
-                  pushVal(label, meta, (v)=> JSON.stringify(v));
-                }
-                continue;
-              }
-              if(Array.isArray(val)) pushVal(label, val.join(', '));
-              else pushVal(label, val);
-            }
-
-            console.log('Parts length:', parts.length, 'Parts:', parts);
-            block.innerHTML = parts.join('') || '<div>(No hay campos detallados disponibles)</div>';
-            console.log('Set innerHTML to:', block.innerHTML);
-          }
+          // Display form fields directly in summary
+          vdiv.innerHTML = `
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Nombre del encargado</strong>
+                <span>${escapeHtml(pick('manager_name','form.data.manager_name','form.manager_name','_raw.manager_name','contacto_nombre','autoridad_nombre') || '—')}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Tipo de negocio</strong>
+                <span>${escapeHtml(pick('business_type','form.data.business_type','tipo_negocio','business_category') || '—')}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Los horarios del negocio son los que estan en Google</strong>
+                <span>${escapeHtml(pick('hours_google','form.data.hours_google','hours.google','horas_google') || '—')}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Instagram</strong>
+                <span>${instagramHtml}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Telefono</strong>
+                <span>${telefonoHtml}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Tienen menu online</strong>
+                <span>${escapeHtml(pick('menu_online','form.data.menu_online','menu.online','_raw.menu_online') || '—')}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Musica usual</strong>
+                <span>${(() => {
+                  const val = pick('music_types','form.data.music_types','music.types','_raw.music_types');
+                  return escapeHtml(Array.isArray(val) ? val.join(', ') : (val || '—'));
+                })()}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Tienen musica en vivo</strong>
+                <span>${escapeHtml(pick('live_music','form.data.live_music','music.live','_raw.live_music') || '—')}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Dias de mayor trafico</strong>
+                <span>${(() => {
+                  const val = pick('busy_days','form.data.busy_days','busy.days','_raw.busy_days');
+                  return escapeHtml(Array.isArray(val) ? val.join(', ') : (val || '—'));
+                })()}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Nivel de trafico</strong>
+                <span>${escapeHtml(pick('traffic_level','form.data.traffic_level','traffic','_raw.traffic_level') || '—')}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Tipo de clientes</strong>
+                <span>${escapeHtml(pick('clientele','form.data.clientele','_raw.clientele') || '—')}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Tienen promocion activa</strong>
+                <span>${escapeHtml(pick('promotion_active','form.data.promotion_active','promos_active','_raw.promos_active') || '—')}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Detalles de la promocion</strong>
+                <span>${escapeHtml(pick('promotion_details','form.data.promotion_details','promos_details','promos.details','_raw.promos_details') || '—')}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Cerveza (mas barata)</strong>
+                <span>${escapeHtml(pick('cheapest_beer','form.data.cheapest_beer','beer_cheapest_name','beer.cheapest.name','_raw.beer_cheapest_name') || '—')}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Precio Cerveza (mas barata)</strong>
+                <span>${escapeHtml(pick('cheapest_beer_price','form.data.cheapest_beer_price','beer_cheapest_price','beer.cheapest.price','_raw.beer_cheapest_price') || '—')}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Cerveza (mas cara)</strong>
+                <span>${escapeHtml(pick('expensive_beer','form.data.expensive_beer','beer_priciest_name','beer.priciest.name','_raw.beer_priciest_name') || '—')}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Precio Cerveza (mas cara)</strong>
+                <span>${escapeHtml(pick('expensive_beer_price','form.data.expensive_beer_price','beer_priciest_price','beer.priciest.price','_raw.beer_priciest_price') || '—')}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Trago (mas barato)</strong>
+                <span>${escapeHtml(pick('cheapest_drink','form.data.cheapest_drink','drink_cheapest_name','drink.cheapest.name','_raw.drink_cheapest_name') || '—')}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Precio Trago (mas barato)</strong>
+                <span>${escapeHtml(pick('cheapest_drink_price','form.data.cheapest_drink_price','drink_cheapest_price','drink.cheapest.price','_raw.drink_cheapest_price') || '—')}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Trago (mas caro)</strong>
+                <span>${escapeHtml(pick('expensive_drink','form.data.expensive_drink','drink_priciest_name','drink.priciest.name','_raw.drink_priciest_name') || '—')}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Precio Trago (mas caro)</strong>
+                <span>${escapeHtml(pick('expensive_drink_price','form.data.expensive_drink_price','drink_priciest_price','drink.priciest.price','_raw.drink_priciest_price') || '—')}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Sistema para cobrar</strong>
+                <span>${escapeHtml(pick('payment_system','form.data.payment_system','pos_system','pos.system','_raw.pos_system') || '—')}</span>
+              </div>
+              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
+                <strong>Notas</strong>
+                <span>${escapeHtml(pick('notas','form.data.notas','state.notas','notes','_notes','_raw.notas') || '—')}</span>
+              </div>
+            </div>
+          `;
 
           visitsWrap.appendChild(vdiv);
 
-          // wire toggle
-          vdiv.querySelectorAll('button[data-idx]')?.forEach(btn=>{
-            btn.addEventListener('click', ()=>{
-              const id = btn.getAttribute('data-idx');
-              const det = document.getElementById('visit-details-' + id);
-              if(!det) return;
-
-              // Process fields on demand
-              const block = det.querySelector('.visit-canonical');
-              if(block && block.innerHTML.trim() === ''){  // only if not already processed
-                const parts = [];
-                const pushVal = (label, val, formatFn)=>{
-                  if(val===undefined || val===null) return;
-                  if(typeof val === 'boolean') return;
-                  if(Array.isArray(val) && val.length===0) return;
-                  let out = val;
-                  if(formatFn) out = formatFn(val);
-                  else if(typeof val === 'object') out = JSON.stringify(val);
-                  if(String(out).trim() === '') return;
-                  parts.push(`<tr><td style="padding:4px; border-bottom:1px solid #ccc;"><strong>${label}</strong></td><td style="padding:4px; border-bottom:1px solid #ccc;">${escapeHtml(String(out))}</td></tr>`);
-                };
-
-                const requested = [
-                  ['Nombre del encargado', ['manager_name','form.data.manager_name','form.manager_name','_raw.manager_name','contacto_nombre','autoridad_nombre','empleado']],
-                  ['Tipo de negocio', ['business_type','form.data.business_type','tipo_negocio','business_category']],
-                  ['Los horarios del negocio son los que estan en Google', ['hours_google','form.data.hours_google','hours.google','horas_google']],
-                  ['lunes', ['hours.mon','form.data.hours_mon','hours_mon','horas.mon','horas_mon']],
-                  ['martes', ['hours.tue','form.data.hours_tue','hours_tue','horas.tue','horas_tue']],
-                  ['miercoles', ['hours.wed','form.data.hours_wed','hours_wed','horas.wed','horas_wed']],
-                  ['jueves', ['hours.thu','form.data.hours_thu','hours_thu','horas.thu','horas_thu']],
-                  ['viernes', ['hours.fri','form.data.hours_fri','hours_fri','horas.fri','horas_fri']],
-                  ['sabado', ['hours.sat','form.data.hours_sat','hours_sat','horas.sat','horas_sat']],
-                  ['domingo', ['hours.sun','form.data.hours_sun','hours_sun','horas.sun','horas_sun']],
-                  ['Instagram', ['instagram','form.data.instagram','form.instagram','instagram_handle','_raw.instagram']],
-                  ['Telefono', ['phone','form.data.phone','form.phone','contacto_tel','tel','_raw.phone']],
-                  ['Tienen menu online', ['menu_online','form.data.menu_online','menu.online','_raw.menu_online']],
-                  ['Metodo', ['menu_submit_method','form.data.menu_submit_method','menu_submission_method','menu.submission_method','_raw.menu_submission_method']],
-                  ['Link del menu', ['menu_link','form.data.menu_link','menu.link','_raw.menu_link']],
-                  ['Archivo del menu', ['menu_files','form.data.menu_files','menu.files','menu_files','_raw.menu_files']],
-                  ['Musica usual', ['music_types','form.data.music_types','music.types','_raw.music_types']],
-                  ['Otro(musica)', ['music_other','form.data.music_other','music.other','_raw.music_other']],
-                  ['Tienen musica en vivo', ['live_music','form.data.live_music','music.live','_raw.live_music']],
-                  ['Tipo de musica', ['live_music_type','form.data.live_music_type','live_music.type','_raw.live_music_type']],
-                  ['Dias de musica en vivo', ['live_music_days','form.data.live_music_days','live_music.days','_raw.live_music_days']],
-                  ['Otros dias', ['live_music_days_other','form.data.live_music_days_other','live_music.days_other','_raw.live_music_days_other']],
-                  ['Dias de mayor trafico', ['busy_days','form.data.busy_days','busy.days','_raw.busy_days']],
-                  ['Nivel de trafico', ['traffic_level','form.data.traffic_level','traffic','_raw.traffic_level']],
-                  ['Tipo de clientes', ['clientele','form.data.clientele','_raw.clientele']],
-                  ['Tienen promocion activa', ['promotion_active','form.data.promotion_active','promos_active','_raw.promos_active']],
-                  ['Detalles de la promocion', ['promotion_details','form.data.promotion_details','promos_details','promos.details','_raw.promos_details']],
-                  ['Cerveza (mas barata)', ['cheapest_beer','form.data.cheapest_beer','beer_cheapest_name','beer.cheapest.name','_raw.beer_cheapest_name']],
-                  ['Precio Cerveza (mas barata)', ['cheapest_beer_price','form.data.cheapest_beer_price','beer_cheapest_price','beer.cheapest.price','_raw.beer_cheapest_price']],
-                  ['Cerveza (mas cara)', ['expensive_beer','form.data.expensive_beer','beer_priciest_name','beer.priciest.name','_raw.beer_priciest_name']],
-                  ['Precio Cerveza (mas cara)', ['expensive_beer_price','form.data.expensive_beer_price','beer_priciest_price','beer.priciest.price','_raw.beer_priciest_price']],
-                  ['Trago (mas barato)', ['cheapest_drink','form.data.cheapest_drink','drink_cheapest_name','drink.cheapest.name','_raw.drink_cheapest_name']],
-                  ['Precio Trago (mas barato)', ['cheapest_drink_price','form.data.cheapest_drink_price','drink_cheapest_price','drink.cheapest.price','_raw.drink_cheapest_price']],
-                  ['Trago (mas caro)', ['expensive_drink','form.data.expensive_drink','drink_priciest_name','drink.priciest.name','_raw.drink_priciest_name']],
-                  ['Precio Trago (mas caro)', ['expensive_drink_price','form.data.expensive_drink_price','drink_priciest_price','drink.priciest.price','_raw.drink_priciest_price']],
-                  ['Sistema para cobrar', ['payment_system','form.data.payment_system','pos_system','pos.system','_raw.pos_system']],
-                  ['Otro sistema', ['pos_other','form.data.pos_other','pos.other','_raw.pos_other']],
-                  ['Notas', ['notas','form.data.notas','state.notas','notes','_notes','_raw.notas']]
-                ];
-
-                for(const [label, keys] of requested){
-                  const val = pick(...keys);
-                  if(label === 'Archivo del menu' && val){
-                    // menu_files metadata
-                    const files = Array.isArray(val) ? val : (val.files || val.file || []);
-                    if(Array.isArray(files) && files.length){
-                      const meta = files.map(f=>{
-                        try{ return { name: f.name || f.filename || f.fileName || f.title || '', size: f.size || f.byteSize || null, type: f.type || f.mime || '' }; }catch(e){ return { name: String(f) }; }
-                      });
-                      pushVal(label, meta, (v)=> JSON.stringify(v));
-                    }
-                    continue;
-                  }
-                  if(Array.isArray(val)) pushVal(label, val.join(', '));
-                  else pushVal(label, val);
-                }
-
-                block.innerHTML = parts.length ? `<table style="width:100%; border-collapse:collapse;">${parts.join('')}</table>` : '<div>(No hay campos detallados disponibles)</div>';
-              }
-
-              if(det.style.display === 'none'){ det.style.display = ''; btn.textContent = 'Ocultar detalles'; }
-              else { det.style.display = 'none'; btn.textContent = 'Mostrar detalles'; }
-            });
-          });
+          // wire toggle - removed since we show everything directly
         });
       }
     }
