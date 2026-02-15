@@ -944,8 +944,8 @@ function validateBarForm(){
     return true;
   }
 
-  // Validate visible HTML5-constrained fields
-  const visibles = Array.from(form.querySelectorAll('input,select,textarea')).filter(isVisible);
+  // Validate visible HTML5-constrained fields (exclude checkboxes and radios, they have custom validation)
+  const visibles = Array.from(form.querySelectorAll('input,select,textarea')).filter(isVisible).filter(el => el.type !== 'checkbox' && el.type !== 'radio');
   for(const el of visibles){ 
     if(!el.checkValidity()) {
       console.log('VALIDATION FAILED: HTML5 validation failed on', el.name || el.id, 'value:', el.value);
