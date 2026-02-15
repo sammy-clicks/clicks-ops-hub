@@ -126,28 +126,28 @@
       const venueEntries = venues.filter(v=> ((v.business_name||v.local||v.local_name||'').toString()) === localName);
       const postEntries = posts.filter(p=> ((p.local||p.local_name||p.business_name||'').toString()) === localName);
 
-    const modal = document.createElement('div');
-    modal.style.position = 'fixed'; modal.style.inset = 0; modal.style.background = 'rgba(0,0,0,.6)'; modal.style.display='flex'; modal.style.alignItems='center'; modal.style.justifyContent='center'; modal.style.zIndex = 9999;
-    const content = document.createElement('div');
-    content.className = 'card'; content.style.maxWidth = '880px'; content.style.width = '92%'; content.style.maxHeight = '84%'; content.style.overflow = 'auto';
+      const modal = document.createElement('div');
+      modal.style.position = 'fixed'; modal.style.inset = 0; modal.style.background = 'rgba(0,0,0,.6)'; modal.style.display='flex'; modal.style.alignItems='center'; modal.style.justifyContent='center'; modal.style.zIndex = 9999;
+      const content = document.createElement('div');
+      content.className = 'card'; content.style.maxWidth = '880px'; content.style.width = '92%'; content.style.maxHeight = '84%'; content.style.overflow = 'auto';
 
-    let html = `
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <h3>Detalles - ${escapeHtml(localName)}</h3>
-        <button class="btn ghost" id="closeDetails">Cerrar</button>
-      </div>
-      <div class="hr"></div>
+      let html = `
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <h3>Detalles - ${escapeHtml(localName)}</h3>
+          <button class="btn ghost" id="closeDetails">Cerrar</button>
+        </div>
+        <div class="hr"></div>
 
-      <h4 style="color:var(--coral); margin:6px 0 8px 0;">Visita(s) registradas</h4>
-      <div id="visitsContainer" style="min-height:80px;"></div>
+        <h4 style="color:var(--coral); margin:6px 0 8px 0;">Visita(s) registradas</h4>
+        <div id="visitsContainer" style="min-height:80px;"></div>
 
-      <div class="hr"></div>
-      <h4 style="color:var(--yellow); margin:6px 0 8px 0;">Post‑visita</h4>
-      <div id="postsContainer" style="min-height:80px;"></div>
-    `;
-    content.innerHTML = html;
-    modal.appendChild(content);
-    document.body.appendChild(modal);
+        <div class="hr"></div>
+        <h4 style="color:var(--yellow); margin:6px 0 8px 0;">Post‑visita</h4>
+        <div id="postsContainer" style="min-height:80px;"></div>
+      `;
+      content.innerHTML = html;
+      modal.appendChild(content);
+      document.body.appendChild(modal);
 
     document.getElementById('closeDetails')?.addEventListener('click', ()=>{ modal.remove(); });
     modal.addEventListener('click', (e)=>{ if(e.target === modal) modal.remove(); });
@@ -458,7 +458,11 @@
         });
       }
     }
+  } catch (err) {
+    console.error('Show details error:', err);
+    alert('Error al mostrar detalles');
   }
+}
 
   async function deleteVenue(localName) {
     if(!confirm(`¿Eliminar el negocio "${localName}", su visita y post-visita?`)) return;
