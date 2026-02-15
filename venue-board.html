@@ -294,30 +294,36 @@
                   }
                 };
 
-                // Add specific known fields with proper labels
+                // Get form data from the correct location based on how field-guide.html saves it
+                console.log('Entry structure:', entry);
+                console.log('Entry.data:', entry.data);
+                const formData = (entry.data && entry.data._raw) || entry._raw || (entry.data) || {};
+                console.log('Form data extracted:', formData);
+
+                // Add specific known fields with proper labels using direct field names
                 addField('Encargado de la visita', encargadoVisita);
-                addField('Nombre del encargado', encargadoNegocio);
-                addField('Tipo de negocio', pick('business_type','form.business_type','_raw.business_type','tipo_negocio'));
-                addField('Los horarios del negocio son los que están en Google', pick('hours_google','form.hours_google','_raw.hours_google','horarios_google'));
-                addField('Instagram', pick('instagram','form.instagram','_raw.instagram','instagram_handle'));
-                addField('Teléfono', pick('phone','form.phone','_raw.phone','telefono','contacto_tel'));
-                addField('Tienen menú online', pick('menu_online','form.menu_online','_raw.menu_online'));
-                addField('Música usual', pick('music_types','form.music_types','_raw.music_types','music_usual'));
-                addField('Tienen música en vivo', pick('live_music','form.live_music','_raw.live_music'));
-                addField('Días de mayor tráfico', pick('busy_days','form.busy_days','_raw.busy_days','traffic_days'));
-                addField('Nivel de tráfico', pick('traffic_level','form.traffic_level','_raw.traffic_level'));
-                addField('Tipo de clientes', pick('clientele','form.clientele','_raw.clientele','client_type'));
-                addField('Tienen promoción activa', pick('promotion_active','form.promotion_active','_raw.promotion_active','promo_active'));
-                addField('Detalles de la promoción', pick('promotion_details','form.promotion_details','_raw.promotion_details','promo_details'));
-                addField('Cerveza (más barata)', pick('cheapest_beer','form.cheapest_beer','_raw.cheapest_beer'));
-                addField('Precio Cerveza (más barata)', pick('cheapest_beer_price','form.cheapest_beer_price','_raw.cheapest_beer_price'));
-                addField('Cerveza (más cara)', pick('expensive_beer','form.expensive_beer','_raw.expensive_beer'));
-                addField('Precio Cerveza (más cara)', pick('expensive_beer_price','form.expensive_beer_price','_raw.expensive_beer_price'));
-                addField('Trago (más barato)', pick('cheapest_drink','form.cheapest_drink','_raw.cheapest_drink'));
-                addField('Precio Trago (más barato)', pick('cheapest_drink_price','form.cheapest_drink_price','_raw.cheapest_drink_price'));
-                addField('Trago (más caro)', pick('expensive_drink','form.expensive_drink','_raw.expensive_drink'));
-                addField('Precio Trago (más caro)', pick('expensive_drink_price','form.expensive_drink_price','_raw.expensive_drink_price'));
-                addField('Sistema para cobrar', pick('payment_system','form.payment_system','_raw.payment_system','pos_system','system_payment'));
+                addField('Nombre del encargado', formData.manager_name || encargadoNegocio);
+                addField('Tipo de negocio', formData.business_type);
+                addField('Los horarios del negocio son los que están en Google', formData.hours_google);
+                addField('Instagram', formData.instagram || entry.instagram);
+                addField('Teléfono', formData.phone || entry.phone);
+                addField('Tienen menú online', formData.menu_online);
+                addField('Música usual', formData.music_types);
+                addField('Tienen música en vivo', formData.live_music);
+                addField('Días de mayor tráfico', formData.busy_days);
+                addField('Nivel de tráfico', formData.traffic_level);
+                addField('Tipo de clientes', formData.clientele);
+                addField('Tienen promoción activa', formData.promotion_active);
+                addField('Detalles de la promoción', formData.promotion_details);
+                addField('Cerveza (más barata)', formData.cheapest_beer);
+                addField('Precio Cerveza (más barata)', formData.cheapest_beer_price);
+                addField('Cerveza (más cara)', formData.expensive_beer);
+                addField('Precio Cerveza (más cara)', formData.expensive_beer_price);
+                addField('Trago (más barato)', formData.cheapest_drink);
+                addField('Precio Trago (más barato)', formData.cheapest_drink_price);
+                addField('Trago (más caro)', formData.expensive_drink);
+                addField('Precio Trago (más caro)', formData.expensive_drink_price);
+                addField('Sistema para cobrar', formData.payment_system || formData.pos_system);
 
                 // Show ALL available data from different sources for debugging
                 const allData = {};
