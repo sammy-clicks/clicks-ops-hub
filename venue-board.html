@@ -243,33 +243,32 @@
               let cur = entry;
               let found = true;
               for(const p of parts){ if(cur && typeof cur === 'object' && (p in cur)) cur = cur[p]; else { found = false; break; } }
-              if(found && cur !== undefined && cur !== null && cur !== '') return cur;
-            }
-            // Then try in _raw
-            if(entry._raw){
-              for(const k of keys){
-                if(k.startsWith('_raw.')){
-                  const rk = k.slice(5);
-                  if(rk in entry._raw) return entry._raw[rk];
-                } else {
-                  // search in _raw by key name
-                  for(const rk of Object.keys(entry._raw)){
-                    if(rk.toLowerCase().includes(k.toLowerCase().split('.')[0])){
+                if(found && cur !== undefined && cur !== null && cur !== '') {
+                  console.log(`Found ${k}:`, cur);
+                  return cur;
+                }
+              }
+              // Then try in _raw
+              if(entry._raw){
+                for(const k of keys){
+                  if(k.startsWith('_raw.')){
+                    const rk = k.slice(5);
+                    if(rk in entry._raw) {
+                      console.log(`Found _raw.${rk}:`, entry._raw[rk]);
                       return entry._raw[rk];
+                    }
+                  } else {
+                    // search in _raw by key name
+                    for(const rk of Object.keys(entry._raw)){
+                      if(rk.toLowerCase().includes(k.toLowerCase().split('.')[0])){
+                        console.log(`Found _raw.${rk} (matching ${k}):`, entry._raw[rk]);
+                        return entry._raw[rk];
+                      }
                     }
                   }
                 }
               }
-            }
-            return undefined;
-          }
-
-          const block = document.getElementById(canonicalElId)?.querySelector('.visit-canonical');
-          if(block){
-            console.log('Block found, processing fields for idx', idx);
-            const parts = [];
-            const pushVal = (label, val, formatFn)=>{
-              if(val===undefined || val===null) return;
+              console.log(`Not found: ${keys.join(', ')}`);
               if(typeof val === 'boolean') return;
               if(Array.isArray(val) && val.length===0) return;
               let out = val;
