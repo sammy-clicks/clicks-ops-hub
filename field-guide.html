@@ -927,7 +927,10 @@ function clearInputs(container){
 
 function validateBarForm(){
   const form = document.getElementById('barForm');
-  if(!form) return false;
+  if(!form) {
+    console.log('VALIDATION FAILED: barForm not found');
+    return false;
+  }
   // helper: determine if an element is actually visible to the user
   function isVisible(el){
     if(!el) return false;
@@ -943,21 +946,35 @@ function validateBarForm(){
 
   // Validate visible HTML5-constrained fields
   const visibles = Array.from(form.querySelectorAll('input,select,textarea')).filter(isVisible);
-  for(const el of visibles){ if(!el.checkValidity()) return false; }
+  for(const el of visibles){ 
+    if(!el.checkValidity()) {
+      console.log('VALIDATION FAILED: HTML5 validation failed on', el.name || el.id, 'value:', el.value);
+      return false;
+    }
+  }
 
   // music_types at least one if the group is visible
   const musicChecks = Array.from(document.querySelectorAll('input[name="music_types"]')).filter(isVisible);
-  if(musicChecks.length > 0 && !musicChecks.some(i=>i.checked)) return false;
+  if(musicChecks.length > 0 && !musicChecks.some(i=>i.checked)) {
+    console.log('VALIDATION FAILED: No music_types selected');
+    return false;
+  }
 
   // busy_days at least one if visible
   const busyChecks = Array.from(document.querySelectorAll('input[name="busy_days"]')).filter(isVisible);
-  if(busyChecks.length > 0 && !busyChecks.some(i=>i.checked)) return false;
+  if(busyChecks.length > 0 && !busyChecks.some(i=>i.checked)) {
+    console.log('VALIDATION FAILED: No busy_days selected');
+    return false;
+  }
 
   // live_music conditional
   const liveMusicSel = document.getElementById('live_music');
   if(isVisible(liveMusicSel) && liveMusicSel.value === 'si'){
     const liveDays = Array.from(document.querySelectorAll('input[name="live_music_days"]')).filter(isVisible);
-    if(liveDays.length > 0 && !liveDays.some(i=>i.checked)) return false;
+    if(liveDays.length > 0 && !liveDays.some(i=>i.checked)) {
+      console.log('VALIDATION FAILED: live_music is si but no live_music_days selected');
+      return false;
+    }
   }
 
   // menu submission conditional
@@ -966,11 +983,17 @@ function validateBarForm(){
     const method = document.getElementById('menu_submit_method');
     if(isVisible(method) && method.value === 'link'){
       const link = document.getElementById('menu_link');
-      if(!isVisible(link) || !link.value) return false;
+      if(!isVisible(link) || !link.value) {
+        console.log('VALIDATION FAILED: menu_online is si, method is link, but menu_link is missing');
+        return false;
+      }
     }
     if(isVisible(method) && method.value === 'file'){
       const files = document.getElementById('menu_files');
-      if(!isVisible(files) || !files.files || files.files.length === 0) return false;
+      if(!isVisible(files) || !files.files || files.files.length === 0) {
+        console.log('VALIDATION FAILED: menu_online is si, method is file, but menu_files is missing');
+        return false;
+      }
     }
   }
 
@@ -978,23 +1001,33 @@ function validateBarForm(){
   const promos = document.getElementById('promos_active');
   if(isVisible(promos) && promos.value === 'si'){
     const pd = document.getElementById('promos_details');
-    if(!isVisible(pd) || !pd.value.trim()) return false;
+    if(!isVisible(pd) || !pd.value.trim()) {
+      console.log('VALIDATION FAILED: promos_active is si but promos_details is missing');
+      return false;
+    }
   }
 
   // pos system
   const pos = document.getElementById('pos_system');
   if(isVisible(pos) && pos.value === 'Otro'){
     const po = document.getElementById('pos_other');
-    if(!isVisible(po) || !po.value.trim()) return false;
+    if(!isVisible(po) || !po.value.trim()) {
+      console.log('VALIDATION FAILED: pos_system is Otro but pos_other is missing');
+      return false;
+    }
   }
 
   // business type other
   const bt = document.getElementById('business_type');
   if(isVisible(bt) && bt.value === 'Other'){
     const bto = document.getElementById('business_type_other');
-    if(!isVisible(bto) || !bto.value.trim()) return false;
+    if(!isVisible(bto) || !bto.value.trim()) {
+      console.log('VALIDATION FAILED: business_type is Other but business_type_other is missing');
+      return false;
+    }
   }
 
+  console.log('VALIDATION PASSED!');
   return true;
 }
 

@@ -334,22 +334,22 @@
                 addField('Días de mayor tráfico', formData.busy_days);
                 addField('Nivel de tráfico', formData.traffic_level);
                 addField('Tipo de clientes', formData.clientele);
-                addField('Tienen promoción activa', formData.promotion_active);
+                addField('Tienen promoción activa', formData.promos_active);
                 // Detalles de la promoción (si tiene promoción activa)
-                if(formData.promotion_active === 'Sí' || formData.promotion_active === 'sí' || formData.promotion_active === 'Si' || formData.promotion_active === 'si'){
-                  addField('Detalles de la promoción', formData.promotion_details);
+                if(formData.promos_active === 'Sí' || formData.promos_active === 'sí' || formData.promos_active === 'Si' || formData.promos_active === 'si'){
+                  addField('Detalles de la promoción', formData.promos_details);
                 }
-                addField('Cerveza (más barata)', formData.cheapest_beer);
-                addField('Precio Cerveza (más barata)', formData.cheapest_beer_price);
-                addField('Cerveza (más cara)', formData.expensive_beer);
-                addField('Precio Cerveza (más cara)', formData.expensive_beer_price);
-                addField('Trago (más barato)', formData.cheapest_drink);
-                addField('Precio Trago (más barato)', formData.cheapest_drink_price);
-                addField('Trago (más caro)', formData.expensive_drink);
-                addField('Precio Trago (más caro)', formData.expensive_drink_price);
-                addField('Sistema para cobrar', formData.payment_system || formData.pos_system);
-                // Otro sistema (si marcó "Other")
-                if(formData.payment_system === 'Other' || formData.pos_system === 'Other'){
+                addField('Cerveza (más barata)', formData.beer_cheapest_name);
+                addField('Precio Cerveza (más barata)', formData.beer_cheapest_price);
+                addField('Cerveza (más cara)', formData.beer_priciest_name);
+                addField('Precio Cerveza (más cara)', formData.beer_priciest_price);
+                addField('Trago (más barato)', formData.drink_cheapest_name);
+                addField('Precio Trago (más barato)', formData.drink_cheapest_price);
+                addField('Trago (más caro)', formData.drink_priciest_name);
+                addField('Precio Trago (más caro)', formData.drink_priciest_price);
+                addField('Sistema para cobrar', formData.pos_system);
+                // Otro sistema (si marcó "Otro")
+                if(formData.pos_system === 'Otro'){
                   addField('Otro sistema para cobrar', formData.pos_other);
                 }
 
