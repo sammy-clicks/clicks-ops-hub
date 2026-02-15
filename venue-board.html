@@ -300,7 +300,9 @@
                 const formData = entry.data || entry;
 
                 // Add ONLY the specific operational profile fields (including conditional fields)
-                addField('Tipo de negocio', formData.business_type);
+                // Tipo de negocio (si es "Other", mostrar el valor personalizado)
+                const businessType = formData.business_type === 'Other' ? formData.business_type_other : formData.business_type;
+                addField('Tipo de negocio', businessType);
                 addField('Los horarios del negocio son los que están en Google', formData.hours_google);
                 // Horarios manuales (si dijo "No" a horarios en Google)
                 if(formData.hours_google === 'No' || formData.hours_google === 'no'){
