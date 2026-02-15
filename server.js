@@ -2,6 +2,8 @@ const express = require('express');
 const { Pool } = require('pg');
 const path = require('path');
 
+console.log('Server starting...');
+
 const app = express();
 const port = process.env.PORT || 3000;
 
