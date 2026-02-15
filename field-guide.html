@@ -244,7 +244,6 @@ const state = loadState() || {
   },
   consentimiento: { ok: null, opened: false },
   form: { enviado: null },
-  interes: "medio", // alto | medio | bajo
   // Datos del local (nombre, dirección, zona)
   local: { nombre: "", direccion: "", zona: "", zona_custom: "" },
   notas: "",
@@ -1285,7 +1284,6 @@ function buildPayload(){
     consentimiento: state.consentimiento.ok,
     form_enviado: state.form.enviado,
 
-    interes: state.interes,
     notas: state.notas,
     // Correo destino sugerido para notificaciones
     notify_email: CONFIG.NOTIFY_EMAIL,
@@ -1705,7 +1703,6 @@ document.addEventListener("DOMContentLoaded", () => {
     state.resultado = { tipo: "", seguimiento_fecha: "" };
     state.consentimiento = { ok: null, opened: false };
     state.form = { enviado: null };
-    state.interes = "medio";
     state.local = { nombre: "", direccion: "", zona: "", zona_custom: "" };
     state.notas = "";
     state.submit = { last_status: "", last_ok: null };
