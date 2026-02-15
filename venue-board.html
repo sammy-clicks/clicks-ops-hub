@@ -243,111 +243,110 @@
             return undefined;
           }
 
-          // Display form fields directly in summary
+          // Clean summary with key fields
+          const businessType = pick('business_type','form.data.business_type','tipo_negocio','business_category');
+          const menuOnline = pick('menu_online','form.data.menu_online','menu.online','_raw.menu_online');
+          const liveMusic = pick('live_music','form.data.live_music','music.live','_raw.live_music');
+          const trafficLevel = pick('traffic_level','form.data.traffic_level','traffic','_raw.traffic_level');
+          const promoActive = pick('promotion_active','form.data.promotion_active','promos_active','_raw.promos_active');
+          const musicTypes = pick('music_types','form.data.music_types','music.types','_raw.music_types');
+
           vdiv.innerHTML = `
-            <div style="display:flex; flex-direction:column; gap:8px;">
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Nombre del encargado</strong>
-                <span>${escapeHtml(pick('manager_name','form.data.manager_name','form.manager_name','_raw.manager_name','contacto_nombre','autoridad_nombre') || '—')}</span>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+              <div style="flex:1">
+                <div style="margin-bottom:8px; line-height:1.4; display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                  <div><strong>Encargado:</strong> ${escapeHtml(encargado || '—')}</div>
+                  <div><strong>Tipo negocio:</strong> ${escapeHtml(businessType || '—')}</div>
+                  <div><strong>Teléfono:</strong> ${telefonoHtml}</div>
+                  <div><strong>Instagram:</strong> ${instagramHtml}</div>
+                  <div><strong>Menú online:</strong> ${escapeHtml(menuOnline || '—')}</div>
+                  <div><strong>Música en vivo:</strong> ${escapeHtml(liveMusic || '—')}</div>
+                  <div><strong>Tráfico (1-5):</strong> ${escapeHtml(trafficLevel || '—')}</div>
+                  <div><strong>Promociones:</strong> ${escapeHtml(promoActive || '—')}</div>
+                </div>
               </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Tipo de negocio</strong>
-                <span>${escapeHtml(pick('business_type','form.data.business_type','tipo_negocio','business_category') || '—')}</span>
+              <div style="min-width:140px; text-align:right">
+                <button class="btn ghost" data-idx="${idx}" style="margin-bottom:6px;">Mostrar detalles</button>
               </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Los horarios del negocio son los que estan en Google</strong>
-                <span>${escapeHtml(pick('hours_google','form.data.hours_google','hours.google','horas_google') || '—')}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Instagram</strong>
-                <span>${instagramHtml}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Telefono</strong>
-                <span>${telefonoHtml}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Tienen menu online</strong>
-                <span>${escapeHtml(pick('menu_online','form.data.menu_online','menu.online','_raw.menu_online') || '—')}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Musica usual</strong>
-                <span>${(() => {
-                  const val = pick('music_types','form.data.music_types','music.types','_raw.music_types');
-                  return escapeHtml(Array.isArray(val) ? val.join(', ') : (val || '—'));
-                })()}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Tienen musica en vivo</strong>
-                <span>${escapeHtml(pick('live_music','form.data.live_music','music.live','_raw.live_music') || '—')}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Dias de mayor trafico</strong>
-                <span>${(() => {
-                  const val = pick('busy_days','form.data.busy_days','busy.days','_raw.busy_days');
-                  return escapeHtml(Array.isArray(val) ? val.join(', ') : (val || '—'));
-                })()}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Nivel de trafico</strong>
-                <span>${escapeHtml(pick('traffic_level','form.data.traffic_level','traffic','_raw.traffic_level') || '—')}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Tipo de clientes</strong>
-                <span>${escapeHtml(pick('clientele','form.data.clientele','_raw.clientele') || '—')}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Tienen promocion activa</strong>
-                <span>${escapeHtml(pick('promotion_active','form.data.promotion_active','promos_active','_raw.promos_active') || '—')}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Detalles de la promocion</strong>
-                <span>${escapeHtml(pick('promotion_details','form.data.promotion_details','promos_details','promos.details','_raw.promos_details') || '—')}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Cerveza (mas barata)</strong>
-                <span>${escapeHtml(pick('cheapest_beer','form.data.cheapest_beer','beer_cheapest_name','beer.cheapest.name','_raw.beer_cheapest_name') || '—')}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Precio Cerveza (mas barata)</strong>
-                <span>${escapeHtml(pick('cheapest_beer_price','form.data.cheapest_beer_price','beer_cheapest_price','beer.cheapest.price','_raw.beer_cheapest_price') || '—')}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Cerveza (mas cara)</strong>
-                <span>${escapeHtml(pick('expensive_beer','form.data.expensive_beer','beer_priciest_name','beer.priciest.name','_raw.beer_priciest_name') || '—')}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Precio Cerveza (mas cara)</strong>
-                <span>${escapeHtml(pick('expensive_beer_price','form.data.expensive_beer_price','beer_priciest_price','beer.priciest.price','_raw.beer_priciest_price') || '—')}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Trago (mas barato)</strong>
-                <span>${escapeHtml(pick('cheapest_drink','form.data.cheapest_drink','drink_cheapest_name','drink.cheapest.name','_raw.drink_cheapest_name') || '—')}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Precio Trago (mas barato)</strong>
-                <span>${escapeHtml(pick('cheapest_drink_price','form.data.cheapest_drink_price','drink_cheapest_price','drink.cheapest.price','_raw.drink_cheapest_price') || '—')}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Trago (mas caro)</strong>
-                <span>${escapeHtml(pick('expensive_drink','form.data.expensive_drink','drink_priciest_name','drink.priciest.name','_raw.drink_priciest_name') || '—')}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Precio Trago (mas caro)</strong>
-                <span>${escapeHtml(pick('expensive_drink_price','form.data.expensive_drink_price','drink_priciest_price','drink.priciest.price','_raw.drink_priciest_price') || '—')}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Sistema para cobrar</strong>
-                <span>${escapeHtml(pick('payment_system','form.data.payment_system','pos_system','pos.system','_raw.pos_system') || '—')}</span>
-              </div>
-              <div style="display:grid; grid-template-columns:200px 1fr; gap:8px; align-items:center; padding:4px 8px; border-bottom:1px solid #eee;">
-                <strong>Notas</strong>
-                <span>${escapeHtml(pick('notas','form.data.notas','state.notas','notes','_notes','_raw.notas') || '—')}</span>
+            </div>
+            <div class="visit-details" id="visit-details-${idx}" style="display:none; margin-top:8px; background:rgba(0,0,0,.02); padding:10px; border-radius:6px;">
+              <div class="visit-canonical" style="line-height:1.5;">
               </div>
             </div>
           `;
 
           visitsWrap.appendChild(vdiv);
+
+          // wire toggle for details
+          vdiv.querySelectorAll('button[data-idx]')?.forEach(btn=>{
+            btn.addEventListener('click', ()=>{
+              const id = btn.getAttribute('data-idx');
+              const det = document.getElementById('visit-details-' + id);
+              if(!det) return;
+
+              // Process fields on demand
+              const block = det.querySelector('.visit-canonical');
+              if(block && block.innerHTML.trim() === ''){
+                console.log('Processing detailed view for entry:', entry);
+                const parts = [];
+                const pushVal = (label, val, formatFn)=>{
+                  if(val===undefined || val===null) return;
+                  if(typeof val === 'boolean' && !val) return; // Skip false booleans
+                  if(Array.isArray(val) && val.length===0) return;
+                  let out = val;
+                  if(formatFn) out = formatFn(val);
+                  else if(typeof val === 'object') out = JSON.stringify(val);
+                  if(String(out).trim() === '') return;
+                  parts.push(`<tr><td style="padding:6px; border-bottom:1px solid #ddd; font-weight:600; width:200px;">${label}</td><td style="padding:6px; border-bottom:1px solid #ddd;">${escapeHtml(String(out))}</td></tr>`);
+                };
+
+                // Complete field list with better key mappings
+                const requested = [
+                  ['Nombre del encargado', ['manager_name','form.data.manager_name','form.manager_name','_raw.manager_name','contacto_nombre','autoridad_nombre']],
+                  ['Tipo de negocio', ['business_type','form.data.business_type','_raw.business_type']],
+                  ['Horarios en Google', ['hours_google','form.data.hours_google','_raw.hours_google']],
+                  ['Instagram', ['instagram','form.data.instagram','form.instagram','_raw.instagram']],
+                  ['Teléfono', ['phone','form.data.phone','form.phone','_raw.phone']],
+                  ['Menú online', ['menu_online','form.data.menu_online','_raw.menu_online']],
+                  ['Método menú', ['menu_submit_method','form.data.menu_submit_method','_raw.menu_submit_method']],
+                  ['Link del menú', ['menu_link','form.data.menu_link','_raw.menu_link']],
+                  ['Música usual', ['music_types','form.data.music_types','_raw.music_types']],
+                  ['Otro música', ['music_other','form.data.music_other','_raw.music_other']],
+                  ['Música en vivo', ['live_music','form.data.live_music','_raw.live_music']],
+                  ['Tipo música vivo', ['live_music_type','form.data.live_music_type','_raw.live_music_type']],
+                  ['Días música vivo', ['live_music_days','form.data.live_music_days','_raw.live_music_days']],
+                  ['Días mayor tráfico', ['busy_days','form.data.busy_days','_raw.busy_days']],
+                  ['Nivel tráfico', ['traffic_level','form.data.traffic_level','_raw.traffic_level']],
+                  ['Tipo clientes', ['clientele','form.data.clientele','_raw.clientele']],
+                  ['Promoción activa', ['promotion_active','form.data.promotion_active','promos_active','_raw.promotion_active','_raw.promos_active']],
+                  ['Detalles promoción', ['promotion_details','form.data.promotion_details','promos_details','_raw.promotion_details','_raw.promos_details']],
+                  ['Cerveza barata', ['cheapest_beer','form.data.cheapest_beer','_raw.cheapest_beer']],
+                  ['Precio cerveza barata', ['cheapest_beer_price','form.data.cheapest_beer_price','_raw.cheapest_beer_price']],
+                  ['Cerveza cara', ['expensive_beer','form.data.expensive_beer','_raw.expensive_beer']],
+                  ['Precio cerveza cara', ['expensive_beer_price','form.data.expensive_beer_price','_raw.expensive_beer_price']],
+                  ['Trago barato', ['cheapest_drink','form.data.cheapest_drink','_raw.cheapest_drink']],
+                  ['Precio trago barato', ['cheapest_drink_price','form.data.cheapest_drink_price','_raw.cheapest_drink_price']],
+                  ['Trago caro', ['expensive_drink','form.data.expensive_drink','_raw.expensive_drink']],
+                  ['Precio trago caro', ['expensive_drink_price','form.data.expensive_drink_price','_raw.expensive_drink_price']],
+                  ['Sistema cobrar', ['payment_system','form.data.payment_system','pos_system','_raw.payment_system','_raw.pos_system']],
+                  ['Otro sistema', ['pos_other','form.data.pos_other','_raw.pos_other']],
+                  ['Notas', ['notas','form.data.notas','notes','_notes','_raw.notas']]
+                ];
+
+                for(const [label, keys] of requested){
+                  const val = pick(...keys);
+                  console.log(`${label}: ${val}`);
+                  if(Array.isArray(val)) pushVal(label, val.join(', '));
+                  else pushVal(label, val);
+                }
+
+                block.innerHTML = parts.length ? `<table style="width:100%; border-collapse:collapse; margin-top:8px;">${parts.join('')}</table>` : '<div>(No hay campos detallados disponibles)</div>';
+              }
+
+              if(det.style.display === 'none'){ det.style.display = ''; btn.textContent = 'Ocultar detalles'; }
+              else { det.style.display = 'none'; btn.textContent = 'Mostrar detalles'; }
+            });
+          });
 
           // wire toggle - removed since we show everything directly
         });
