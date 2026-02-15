@@ -283,6 +283,7 @@
               // Process ALL form fields dynamically and comprehensively
               const block = det.querySelector('.visit-canonical');
               if(block && block.innerHTML.trim() === ''){
+                console.log('Processing details for entry:', entry); // Debug log
                 const parts = [];
                 
                 // Helper to add field if it has a value
@@ -296,37 +297,29 @@
                 // Add specific known fields with proper labels
                 addField('Encargado de la visita', encargadoVisita);
                 addField('Nombre del encargado', encargadoNegocio);
-                addField('Tipo de negocio', pick('business_type','form.data.business_type','_raw.business_type','tipo_negocio','form.tipo_negocio'));
-                addField('Los horarios del negocio son los que están en Google', pick('hours_google','form.data.hours_google','_raw.hours_google','horarios_google','form.horarios_google'));
-                addField('Instagram', pick('instagram','form.data.instagram','_raw.instagram','instagram_handle','form.instagram_handle'));
-                addField('Teléfono', pick('phone','form.data.phone','_raw.phone','telefono','form.telefono','contacto_tel','form.contacto_tel'));
-                addField('Tienen menú online', pick('menu_online','form.data.menu_online','_raw.menu_online','menu_online','form.menu_online'));
-                addField('Método', pick('menu_submit_method','form.data.menu_submit_method','_raw.menu_submit_method','menu_method','form.menu_method'));
-                addField('Link del menú', pick('menu_link','form.data.menu_link','_raw.menu_link','menu_link','form.menu_link'));
-                addField('Música usual', pick('music_types','form.data.music_types','_raw.music_types','music_types','form.music_types'));
-                addField('Otro(música)', pick('music_other','form.data.music_other','_raw.music_other','music_other','form.music_other'));
-                addField('Tienen música en vivo', pick('live_music','form.data.live_music','_raw.live_music','live_music','form.live_music'));
-                addField('Tipo de música', pick('live_music_type','form.data.live_music_type','_raw.live_music_type','live_music_type','form.live_music_type'));
-                addField('Días de música en vivo', pick('live_music_days','form.data.live_music_days','_raw.live_music_days','live_music_days','form.live_music_days'));
-                addField('Otros días', pick('live_music_days_other','form.data.live_music_days_other','_raw.live_music_days_other','live_music_days_other','form.live_music_days_other'));
-                addField('Días de mayor tráfico', pick('busy_days','form.data.busy_days','_raw.busy_days','busy_days','form.busy_days'));
-                addField('Nivel de tráfico', pick('traffic_level','form.data.traffic_level','_raw.traffic_level','traffic_level','form.traffic_level'));
-                addField('Tipo de clientes', pick('clientele','form.data.clientele','_raw.clientele','clientele','form.clientele'));
-                addField('Tienen promoción activa', pick('promotion_active','form.data.promotion_active','_raw.promotion_active','promotion_active','form.promotion_active'));
-                addField('Detalles de la promoción', pick('promotion_details','form.data.promotion_details','_raw.promotion_details','promotion_details','form.promotion_details'));
-                addField('Cerveza (más barata)', pick('cheapest_beer','form.data.cheapest_beer','_raw.cheapest_beer','cheapest_beer','form.cheapest_beer'));
-                addField('Precio Cerveza (más barata)', pick('cheapest_beer_price','form.data.cheapest_beer_price','_raw.cheapest_beer_price','cheapest_beer_price','form.cheapest_beer_price'));
-                addField('Cerveza (más cara)', pick('expensive_beer','form.data.expensive_beer','_raw.expensive_beer','expensive_beer','form.expensive_beer'));
-                addField('Precio Cerveza (más cara)', pick('expensive_beer_price','form.data.expensive_beer_price','_raw.expensive_beer_price','expensive_beer_price','form.expensive_beer_price'));
-                addField('Trago (más barato)', pick('cheapest_drink','form.data.cheapest_drink','_raw.cheapest_drink','cheapest_drink','form.cheapest_drink'));
-                addField('Precio Trago (más barato)', pick('cheapest_drink_price','form.data.cheapest_drink_price','_raw.cheapest_drink_price','cheapest_drink_price','form.cheapest_drink_price'));
-                addField('Trago (más caro)', pick('expensive_drink','form.data.expensive_drink','_raw.expensive_drink','expensive_drink','form.expensive_drink'));
-                addField('Precio Trago (más caro)', pick('expensive_drink_price','form.data.expensive_drink_price','_raw.expensive_drink_price','expensive_drink_price','form.expensive_drink_price'));
-                addField('Sistema para cobrar', pick('payment_system','form.data.payment_system','_raw.payment_system','pos_system','_raw.pos_system','payment_system','form.payment_system'));
-                addField('Otro sistema', pick('pos_other','form.data.pos_other','_raw.pos_other','pos_other','form.pos_other'));
-                addField('Notas', pick('notas','form.data.notas','_raw.notas','notes','_notes','notas','form.notas'));
+                addField('Tipo de negocio', pick('business_type','form.business_type','_raw.business_type','tipo_negocio'));
+                addField('Los horarios del negocio son los que están en Google', pick('hours_google','form.hours_google','_raw.hours_google','horarios_google'));
+                addField('Instagram', pick('instagram','form.instagram','_raw.instagram','instagram_handle'));
+                addField('Teléfono', pick('phone','form.phone','_raw.phone','telefono','contacto_tel'));
+                addField('Tienen menú online', pick('menu_online','form.menu_online','_raw.menu_online'));
+                addField('Música usual', pick('music_types','form.music_types','_raw.music_types','music_usual'));
+                addField('Tienen música en vivo', pick('live_music','form.live_music','_raw.live_music'));
+                addField('Días de mayor tráfico', pick('busy_days','form.busy_days','_raw.busy_days','traffic_days'));
+                addField('Nivel de tráfico', pick('traffic_level','form.traffic_level','_raw.traffic_level'));
+                addField('Tipo de clientes', pick('clientele','form.clientele','_raw.clientele','client_type'));
+                addField('Tienen promoción activa', pick('promotion_active','form.promotion_active','_raw.promotion_active','promo_active'));
+                addField('Detalles de la promoción', pick('promotion_details','form.promotion_details','_raw.promotion_details','promo_details'));
+                addField('Cerveza (más barata)', pick('cheapest_beer','form.cheapest_beer','_raw.cheapest_beer'));
+                addField('Precio Cerveza (más barata)', pick('cheapest_beer_price','form.cheapest_beer_price','_raw.cheapest_beer_price'));
+                addField('Cerveza (más cara)', pick('expensive_beer','form.expensive_beer','_raw.expensive_beer'));
+                addField('Precio Cerveza (más cara)', pick('expensive_beer_price','form.expensive_beer_price','_raw.expensive_beer_price'));
+                addField('Trago (más barato)', pick('cheapest_drink','form.cheapest_drink','_raw.cheapest_drink'));
+                addField('Precio Trago (más barato)', pick('cheapest_drink_price','form.cheapest_drink_price','_raw.cheapest_drink_price'));
+                addField('Trago (más caro)', pick('expensive_drink','form.expensive_drink','_raw.expensive_drink'));
+                addField('Precio Trago (más caro)', pick('expensive_drink_price','form.expensive_drink_price','_raw.expensive_drink_price'));
+                addField('Sistema para cobrar', pick('payment_system','form.payment_system','_raw.payment_system','pos_system','system_payment'));
 
-                // Show ALL available data from different sources
+                // Show ALL available data from different sources for debugging
                 const allData = {};
                 
                 // Add from entry root level
@@ -340,7 +333,7 @@
                 if(entry.form) {
                   Object.keys(entry.form).forEach(key => {
                     if(entry.form[key] !== null && entry.form[key] !== undefined && entry.form[key] !== '') {
-                      allData[key] = entry.form[key];
+                      allData['form.' + key] = entry.form[key];
                     }
                   });
                 }
@@ -349,18 +342,20 @@
                 if(entry._raw) {
                   Object.keys(entry._raw).forEach(key => {
                     if(!['timestamp', 'local', 'local_name', 'business_name', 'created_at', 'updated_at'].includes(key.toLowerCase()) && entry._raw[key] !== null && entry._raw[key] !== undefined && entry._raw[key] !== '') {
-                      allData[key] = entry._raw[key];
+                      allData['_raw.' + key] = entry._raw[key];
                     }
                   });
                 }
 
+                console.log('All available data:', allData); // Debug log
+
                 // Add any remaining fields not already shown
                 Object.keys(allData).forEach(key => {
-                  const alreadyShown = parts.some(part => part.includes(key) || part.includes(key.replace(/_/g, ' ')));
+                  const alreadyShown = parts.some(part => part.toLowerCase().includes(key.toLowerCase().split('.')[1] || key.toLowerCase()));
                   if(!alreadyShown) {
                     const value = allData[key];
                     const displayValue = Array.isArray(value) ? value.join(', ') : String(value);
-                    const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    const label = key.replace(/^(form|_raw)\./, '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                     parts.push(`<div style="display:flex; margin-bottom:6px; padding:4px; background:#f8f9fa; border-radius:4px;"><strong style="min-width:200px; color:#495057;">${label}:</strong> <span style="color:#333;">${escapeHtml(displayValue)}</span></div>`);
                   }
                 });
