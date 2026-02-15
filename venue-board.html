@@ -474,8 +474,8 @@
         // determine date: prefer post created_at, else venue started_at
         const dateIso = (latestPost && latestPost.created_at) || entry.created_at || entry.started_at || '';
         const dateText = dateIso ? formatDateIsoToDDMMYYYY(dateIso) : '';
-        const nivel = (latestPost && (latestPost.interest_level || latestPost.interes)) || entry.interes || '—';
-        const firmo = (latestPost ? (latestPost.agreement_signed || latestPost.firmo) : (entry.consentimiento || false));
+        const nivel = (latestPost && (latestPost.interest_level || latestPost.interes)) || '—';
+        const firmo = latestPost ? (latestPost.agreement_signed || latestPost.firmo || false) : null; // null = no post-visit yet
         // Resolve manager_name with multiple fallbacks, including scanning _raw for likely fields
         let encargado = entry.manager_name || (entry.form && entry.form.manager_name) || entry.contacto_nombre || entry.autoridad_nombre || entry.empleado || '';
         if(!encargado && entry._raw){
@@ -503,7 +503,7 @@
           <td>${escapeHtml(visitado)}</td>
           <td>${escapeHtml(dateText)}</td>
           <td>${escapeHtml(nivel)}</td>
-          <td>${firmo ? 'Sí' : 'No'}</td>
+          <td>${firmo === null ? '—' : (firmo ? 'Sí' : 'No')}</td>
           <td>${escapeHtml(entry.notas || entry.notes || entry._notes || '—')}</td>
           <td><button onclick="deleteVenue('${localName.replace(/'/g, "\\'")}')" class="btn ghost" title="Eliminar negocio">🗑️</button></td>
         `;
