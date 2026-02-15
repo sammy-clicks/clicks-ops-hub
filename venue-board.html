@@ -295,19 +295,11 @@
                 };
 
                 // Get form data directly from entry fields (now that buildPayload includes all form.data)
-                console.log('Entry structure:', entry);
-                console.log('Entry.data:', entry.data);
                 const formData = entry.data || entry;
-                console.log('Form data extracted:', formData);
 
-                // Add specific known fields with proper labels using direct field names
-                addField('Encargado de la visita', encargadoVisita);
-                addField('Nombre del encargado', formData.manager_name || encargadoNegocio);
+                // Add ONLY the specific operational profile fields
                 addField('Tipo de negocio', formData.business_type);
                 addField('Los horarios del negocio son los que están en Google', formData.hours_google);
-                addField('Instagram', formData.instagram || entry.instagram);
-                addField('Teléfono', formData.phone || entry.phone);
-                addField('Tienen menú online', formData.menu_online);
                 addField('Música usual', formData.music_types);
                 addField('Tienen música en vivo', formData.live_music);
                 addField('Días de mayor tráfico', formData.busy_days);
@@ -324,47 +316,6 @@
                 addField('Trago (más caro)', formData.expensive_drink);
                 addField('Precio Trago (más caro)', formData.expensive_drink_price);
                 addField('Sistema para cobrar', formData.payment_system || formData.pos_system);
-
-                // Show ALL available data from different sources for debugging
-                const allData = {};
-                
-                // Add from entry root level
-                Object.keys(entry).forEach(key => {
-                  if(!['_raw', 'form', 'created_at', 'updated_at', 'id', 'local', 'local_name', 'business_name'].includes(key) && entry[key] !== null && entry[key] !== undefined && entry[key] !== '') {
-                    allData[key] = entry[key];
-                  }
-                });
-                
-                // Add from entry.form
-                if(entry.form) {
-                  Object.keys(entry.form).forEach(key => {
-                    if(entry.form[key] !== null && entry.form[key] !== undefined && entry.form[key] !== '') {
-                      allData['form.' + key] = entry.form[key];
-                    }
-                  });
-                }
-                
-                // Add from entry._raw
-                if(entry._raw) {
-                  Object.keys(entry._raw).forEach(key => {
-                    if(!['timestamp', 'local', 'local_name', 'business_name', 'created_at', 'updated_at'].includes(key.toLowerCase()) && entry._raw[key] !== null && entry._raw[key] !== undefined && entry._raw[key] !== '') {
-                      allData['_raw.' + key] = entry._raw[key];
-                    }
-                  });
-                }
-
-                console.log('All available data:', allData); // Debug log
-
-                // Add any remaining fields not already shown
-                Object.keys(allData).forEach(key => {
-                  const alreadyShown = parts.some(part => part.toLowerCase().includes(key.toLowerCase().split('.')[1] || key.toLowerCase()));
-                  if(!alreadyShown) {
-                    const value = allData[key];
-                    const displayValue = Array.isArray(value) ? value.join(', ') : String(value);
-                    const label = key.replace(/^(form|_raw)\./, '').replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                    parts.push(`<div style="display:flex; margin-bottom:6px; padding:4px; background:#f8f9fa; border-radius:4px;"><strong style="min-width:200px; color:#495057;">${label}:</strong> <span style="color:#333;">${escapeHtml(displayValue)}</span></div>`);
-                  }
-                });
 
                 block.innerHTML = parts.length ? parts.join('') : '<div>(No hay campos con datos disponibles)</div>';
               }
