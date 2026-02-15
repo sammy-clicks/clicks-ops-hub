@@ -3,6 +3,8 @@ const { Pool } = require('pg');
 const path = require('path');
 
 console.log('Server starting...');
+console.log('DATABASE_URL set:', !!process.env.DATABASE_URL);
+console.log('DATABASE_URL starts with postgres:', process.env.DATABASE_URL?.startsWith('postgres'));
 
 const app = express();
 const port = process.env.PORT || 3000;
