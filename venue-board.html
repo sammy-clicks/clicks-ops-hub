@@ -243,52 +243,16 @@
             return undefined;
           }
 
-          // Beautiful summary table format (restored from earlier version)
-          const businessType = pick('business_type','form.data.business_type','_raw.business_type') || '—';
-          const menuOnline = pick('menu_online','form.data.menu_online','_raw.menu_online') || '—';
-          const liveMusic = pick('live_music','form.data.live_music','_raw.live_music') || '—';
-          const trafficLevel = pick('traffic_level','form.data.traffic_level','_raw.traffic_level') || '—';
-          const promoActive = pick('promotion_active','form.data.promotion_active','_raw.promotion_active') || '—';
-          const musicTypes = pick('music_types','form.data.music_types','_raw.music_types') || '—';
-          const paymentSystem = pick('payment_system','form.data.payment_system','_raw.payment_system','pos_system','_raw.pos_system') || '—';
-
+          // Clean summary - waiting for your specifications
           vdiv.innerHTML = `
-            <div style="background:#f8f9fa; border:1px solid #dee2e6; border-radius:8px; padding:16px; margin-bottom:12px;">
-              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
-                <h4 style="margin:0; color:#495057;">${escapeHtml(localName)}</h4>
-                <button class="btn ghost" data-idx="${idx}" style="font-size:12px;">Ver detalles</button>
+            <div style="border:1px solid #ddd; border-radius:6px; padding:12px; margin-bottom:8px; background:#fff;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                <strong style="font-size:16px;">${escapeHtml(localName)}</strong>
+                <button class="btn ghost" data-idx="${idx}">Ver detalles</button>
               </div>
-              
-              <table style="width:100%; border-collapse:collapse; font-size:14px;">
-                <tr style="border-bottom:1px solid #e9ecef;">
-                  <td style="padding:8px 12px; font-weight:600; background:#fff; width:140px;">Encargado</td>
-                  <td style="padding:8px 12px; background:#fff;">${escapeHtml(encargado || '—')}</td>
-                  <td style="padding:8px 12px; font-weight:600; background:#fff; width:140px;">Tipo Negocio</td>
-                  <td style="padding:8px 12px; background:#fff;">${escapeHtml(businessType)}</td>
-                </tr>
-                <tr style="border-bottom:1px solid #e9ecef;">
-                  <td style="padding:8px 12px; font-weight:600; background:#f8f9fa;">Teléfono</td>
-                  <td style="padding:8px 12px; background:#f8f9fa;">${telefonoHtml}</td>
-                  <td style="padding:8px 12px; font-weight:600; background:#f8f9fa;">Instagram</td>
-                  <td style="padding:8px 12px; background:#f8f9fa;">${instagramHtml}</td>
-                </tr>
-                <tr style="border-bottom:1px solid #e9ecef;">
-                  <td style="padding:8px 12px; font-weight:600; background:#fff;">Menú Online</td>
-                  <td style="padding:8px 12px; background:#fff;">${escapeHtml(menuOnline)}</td>
-                  <td style="padding:8px 12px; font-weight:600; background:#fff;">Música Vivo</td>
-                  <td style="padding:8px 12px; background:#fff;">${escapeHtml(liveMusic)}</td>
-                </tr>
-                <tr>
-                  <td style="padding:8px 12px; font-weight:600; background:#f8f9fa;">Tráfico (1-5)</td>
-                  <td style="padding:8px 12px; background:#f8f9fa;">${escapeHtml(trafficLevel)}</td>
-                  <td style="padding:8px 12px; font-weight:600; background:#f8f9fa;">Promociones</td>
-                  <td style="padding:8px 12px; background:#f8f9fa;">${escapeHtml(promoActive)}</td>
-                </tr>
-              </table>
-              
-              <div class="visit-details" id="visit-details-${idx}" style="display:none; margin-top:16px; background:#fff; padding:16px; border-radius:6px; border:1px solid #dee2e6;">
-                <h5 style="margin:0 0 12px 0; color:#495057;">Información Completa</h5>
-                <div class="visit-canonical" style="line-height:1.5;"></div>
+
+              <div class="visit-details" id="visit-details-${idx}" style="display:none; margin-top:12px; padding:12px; background:#f9f9f9; border-radius:4px;">
+                <div class="visit-canonical"></div>
               </div>
             </div>
           `;
