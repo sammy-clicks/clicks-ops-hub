@@ -843,6 +843,45 @@ function setupSubmitButton() {
       return;
     }
 
+    // AUTOMATICALLY capture bar form data if it wasn't saved yet
+    const formEl = document.getElementById('barForm');
+    if(formEl && (!state.form || !state.form.enviado)){
+      console.log('Auto-capturing bar form data before submit...');
+      const vals = {};
+      Array.from(formEl.querySelectorAll('input,select,textarea')).forEach(el=>{
+        // skip hidden blocks
+        if(el.closest && el.closest('.hide')) return;
+        if(el.offsetParent === null && el.type !== 'range') return;
+
+        const name = el.name || el.id || null;
+        if(!name) return;
+
+        if(el.type === 'checkbox'){
+          if(!vals[name]) vals[name] = [];
+          if(el.checked) vals[name].push(el.value);
+          return;
+        }
+        if(el.type === 'radio'){
+          if(el.checked) vals[name] = el.value;
+          return;
+        }
+        if(el.tagName === 'SELECT' && el.multiple){
+          vals[name] = Array.from(el.selectedOptions).map(o=>o.value);
+          return;
+        }
+        if(el.type === 'file') return;
+
+        vals[name] = el.value;
+      });
+
+      state.form = state.form || {};
+      state.form.data = vals;
+      if(vals.notas !== undefined) state.notas = vals.notas;
+      state.form.enviado = true;
+      saveState();
+      console.log('Auto-captured form data:', vals);
+    }
+
     const payload = buildPayload();
     // best-effort capture of visible bar-form fields in case form wasn't explicitly saved
     try{
@@ -1198,6 +1237,7 @@ function setupBarFormBindings(){
     // persist to state
     state.form = state.form || {};
     state.form.data = vals;
+    console.log('Form data saved to state.form.data:', vals); // Debug log
     // copy contained notes into state.notas (no texto libre)
     if(vals.notas !== undefined) state.notas = vals.notas;
     state.form.enviado = true;
@@ -1212,7 +1252,7 @@ function setupBarFormBindings(){
 }
 
 function buildPayload(){
-  return {
+  const payload = {
     token: CONFIG.TOKEN,
     started_at: state.meta.started_at,
     empleado: state.meta.empleado,
@@ -1250,6 +1290,20 @@ function buildPayload(){
     // Correo destino sugerido para notificaciones
     notify_email: CONFIG.NOTIFY_EMAIL,
   };
+
+  // Include ALL form data fields if the form was filled
+  if(state.form && state.form.data){
+    console.log('Including form data in payload:', state.form.data); // Debug log
+    for(const [key, value] of Object.entries(state.form.data)){
+      // Don't overwrite fields we already set above
+      if(!(key in payload)){
+        payload[key] = value;
+      }
+    }
+  }
+
+  console.log('Final payload to save:', payload); // Debug log
+  return payload;
 }
 
 function getSummaryHtml(){
