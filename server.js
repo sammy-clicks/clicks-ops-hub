@@ -6,14 +6,26 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 // PostgreSQL connection
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false } // For Render
-});
+let pool;
+try {
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false } // For Render
+  });
+  console.log('Pool created successfully');
+} catch (err) {
+  console.error('Failed to create pool:', err);
+  process.exit(1);
+}
 
 // Middleware
 app.use(express.json({ limit: '50mb' })); // For large base64 files
 app.use(express.static(path.join(__dirname)));
+
+// Health check
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
 
 // Create tables if not exist
 async function initDB() {
