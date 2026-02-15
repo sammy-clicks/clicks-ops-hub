@@ -245,7 +245,7 @@
 
           // Extract specific fields for summary
           const encargadoNegocio = encargado || '—'; // Manager of the business
-          const encargadoVisita = pick('employee','form.data.employee','_raw.employee','visit_manager','_raw.visit_manager') || '—'; // Visit manager
+          const encargadoVisita = pick('employee','form.data.employee','_raw.employee','visit_manager','_raw.visit_manager','employee_name','form.data.employee_name','_raw.employee_name','field_employee','_raw.field_employee','visit_employee','_raw.visit_employee') || '—'; // Visit manager - expanded search
           const telefonoResumen = telefono || '—';
           const instagramResumen = instagram ? '@' + instagram.replace(/^@/, '') : '—';
 
@@ -280,7 +280,7 @@
               const det = document.getElementById('visit-details-' + id);
               if(!det) return;
 
-              // Process ALL form fields when showing details
+              // Process ALL form fields dynamically
               const block = det.querySelector('.visit-canonical');
               if(block && block.innerHTML.trim() === ''){
                 const parts = [];
@@ -293,7 +293,8 @@
                   }
                 };
 
-                // Show ALL form data fields that exist
+                // Add specific fields we know about
+                addField('Encargado de la visita', encargadoVisita);
                 addField('Nombre del encargado', pick('manager_name','form.data.manager_name','_raw.manager_name'));
                 addField('Tipo de negocio', pick('business_type','form.data.business_type','_raw.business_type'));
                 addField('Los horarios del negocio son los que están en Google', pick('hours_google','form.data.hours_google','_raw.hours_google'));
@@ -324,6 +325,20 @@
                 addField('Sistema para cobrar', pick('payment_system','form.data.payment_system','_raw.payment_system','pos_system','_raw.pos_system'));
                 addField('Otro sistema', pick('pos_other','form.data.pos_other','_raw.pos_other'));
                 addField('Notas', pick('notas','form.data.notas','_raw.notas','notes','_notes'));
+
+                // Also show ALL raw data fields that might exist
+                if(entry._raw){
+                  for(const [key, value] of Object.entries(entry._raw)){
+                    if(value !== undefined && value !== null && value !== '' && !['timestamp','local','local_name','business_name'].includes(key.toLowerCase())){
+                      // Skip if we already added this field above
+                      const alreadyAdded = parts.some(part => part.includes(key));
+                      if(!alreadyAdded){
+                        const displayValue = Array.isArray(value) ? value.join(', ') : String(value);
+                        parts.push(`<tr><td style="padding:4px; border-bottom:1px solid #ccc; font-weight:600; width:200px;">${key}</td><td style="padding:4px; border-bottom:1px solid #ccc;">${escapeHtml(displayValue)}</td></tr>`);
+                      }
+                    }
+                  }
+                }
 
                 block.innerHTML = parts.length ? `<table style="width:100%; border-collapse:collapse; margin-top:8px;">${parts.join('')}</table>` : '<div>(No hay campos con datos disponibles)</div>';
               }
