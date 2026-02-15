@@ -294,10 +294,10 @@
                   }
                 };
 
-                // Get form data from the correct location based on how field-guide.html saves it
+                // Get form data directly from entry fields (now that buildPayload includes all form.data)
                 console.log('Entry structure:', entry);
                 console.log('Entry.data:', entry.data);
-                const formData = (entry.data && entry.data._raw) || entry._raw || (entry.data) || {};
+                const formData = entry.data || entry;
                 console.log('Form data extracted:', formData);
 
                 // Add specific known fields with proper labels using direct field names
