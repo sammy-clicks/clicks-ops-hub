@@ -243,16 +243,30 @@
             return undefined;
           }
 
-          // Clean summary - waiting for your specifications
+          // Extract specific fields for summary
+          const encargadoNegocio = encargado || '—'; // Manager of the business
+          const encargadoVisita = pick('employee','form.data.employee','_raw.employee','visit_manager','_raw.visit_manager') || '—'; // Visit manager
+          const telefonoResumen = telefono || '—';
+          const instagramResumen = instagram ? '@' + instagram.replace(/^@/, '') : '—';
+
+          // Clean summary with proper styling
           vdiv.innerHTML = `
-            <div style="border:1px solid #ddd; border-radius:6px; padding:12px; margin-bottom:8px; background:#fff;">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-                <strong style="font-size:16px;">${escapeHtml(localName)}</strong>
-                <button class="btn ghost" data-idx="${idx}">Ver detalles</button>
+            <div style="border:1px solid #ddd; border-radius:6px; padding:16px; margin-bottom:12px; background:#f8f9fa; color:#333;">
+              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+                <h4 style="margin:0; color:#333; font-size:18px;">${escapeHtml(localName)}</h4>
+                <button class="btn ghost" data-idx="${idx}">Mostrar detalles</button>
               </div>
 
-              <div class="visit-details" id="visit-details-${idx}" style="display:none; margin-top:12px; padding:12px; background:#f9f9f9; border-radius:4px;">
-                <div class="visit-canonical"></div>
+              <div style="line-height:1.6; font-size:14px;">
+                <div><strong>Encargado de la visita:</strong> ${escapeHtml(encargadoVisita)}</div>
+                <div><strong>Encargado del negocio:</strong> ${escapeHtml(encargadoNegocio)}</div>
+                <div><strong>Teléfono:</strong> ${telefonoHtml}</div>
+                <div><strong>Instagram:</strong> ${instagramHtml}</div>
+              </div>
+
+              <div class="visit-details" id="visit-details-${idx}" style="display:none; margin-top:16px; padding:16px; background:#fff; border-radius:6px; border:1px solid #dee2e6;">
+                <h5 style="margin:0 0 12px 0; color:#333;">Información Completa del Formulario</h5>
+                <div class="visit-canonical" style="line-height:1.5;"></div>
               </div>
             </div>
           `;
@@ -319,7 +333,7 @@
                 btn.textContent = 'Ocultar detalles'; 
               } else { 
                 det.style.display = 'none'; 
-                btn.textContent = 'Ver detalles'; 
+                btn.textContent = 'Mostrar detalles'; 
               }
             });
           });
