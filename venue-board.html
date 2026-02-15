@@ -297,16 +297,48 @@
                 // Get form data directly from entry fields (now that buildPayload includes all form.data)
                 const formData = entry.data || entry;
 
-                // Add ONLY the specific operational profile fields
+                // Add ONLY the specific operational profile fields (including conditional fields)
                 addField('Tipo de negocio', formData.business_type);
                 addField('Los horarios del negocio son los que están en Google', formData.hours_google);
+                // Horarios manuales (si dijo "No" a horarios en Google)
+                if(formData.hours_google === 'No' || formData.hours_google === 'no'){
+                  addField('Horarios Lunes', formData.hours_mon);
+                  addField('Horarios Martes', formData.hours_tue);
+                  addField('Horarios Miércoles', formData.hours_wed);
+                  addField('Horarios Jueves', formData.hours_thu);
+                  addField('Horarios Viernes', formData.hours_fri);
+                  addField('Horarios Sábado', formData.hours_sat);
+                  addField('Horarios Domingo', formData.hours_sun);
+                }
+                addField('Tienen menú online', formData.menu_online);
+                // Detalles del menú (si tiene menú online)
+                if(formData.menu_online === 'Sí' || formData.menu_online === 'sí' || formData.menu_online === 'Si' || formData.menu_online === 'si'){
+                  addField('Método de envío del menú', formData.menu_submit_method);
+                  addField('Link del menú', formData.menu_link);
+                }
                 addField('Música usual', formData.music_types);
+                // Otro tipo de música (si marcó "Other")
+                if(Array.isArray(formData.music_types) && formData.music_types.includes('Other')){
+                  addField('Otro tipo de música', formData.music_other);
+                }
                 addField('Tienen música en vivo', formData.live_music);
+                // Detalles de música en vivo (si tiene música en vivo)
+                if(formData.live_music === 'Sí' || formData.live_music === 'sí' || formData.live_music === 'Si' || formData.live_music === 'si'){
+                  addField('Tipo de música en vivo', formData.live_music_type);
+                  addField('Días de música en vivo', formData.live_music_days);
+                  // Otros días de música en vivo (si marcó "Otros")
+                  if(Array.isArray(formData.live_music_days) && formData.live_music_days.includes('Otros')){
+                    addField('Otros días de música en vivo', formData.live_music_days_other);
+                  }
+                }
                 addField('Días de mayor tráfico', formData.busy_days);
                 addField('Nivel de tráfico', formData.traffic_level);
                 addField('Tipo de clientes', formData.clientele);
                 addField('Tienen promoción activa', formData.promotion_active);
-                addField('Detalles de la promoción', formData.promotion_details);
+                // Detalles de la promoción (si tiene promoción activa)
+                if(formData.promotion_active === 'Sí' || formData.promotion_active === 'sí' || formData.promotion_active === 'Si' || formData.promotion_active === 'si'){
+                  addField('Detalles de la promoción', formData.promotion_details);
+                }
                 addField('Cerveza (más barata)', formData.cheapest_beer);
                 addField('Precio Cerveza (más barata)', formData.cheapest_beer_price);
                 addField('Cerveza (más cara)', formData.expensive_beer);
@@ -316,6 +348,10 @@
                 addField('Trago (más caro)', formData.expensive_drink);
                 addField('Precio Trago (más caro)', formData.expensive_drink_price);
                 addField('Sistema para cobrar', formData.payment_system || formData.pos_system);
+                // Otro sistema (si marcó "Other")
+                if(formData.payment_system === 'Other' || formData.pos_system === 'Other'){
+                  addField('Otro sistema para cobrar', formData.pos_other);
+                }
 
                 block.innerHTML = parts.length ? parts.join('') : '<div>(No hay campos con datos disponibles)</div>';
               }
